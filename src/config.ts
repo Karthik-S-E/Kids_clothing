@@ -2,11 +2,12 @@ export const brand = {
   name: "Kandamma Kids",
   tagline: "Little gods. Big vibes.",
   city: "India",
+  whatsappNumber: "919901200520"
 } as const;
 
 /** Update these to your live brand accounts and WhatsApp business number (country code, no +). */
 export const social = {
-  whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER ?? "919876543210",
+  whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER ?? "919901200520",
   instagram: import.meta.env.VITE_INSTAGRAM_URL ?? "https://www.instagram.com/kandammakids",
   facebook: import.meta.env.VITE_FACEBOOK_URL ?? "https://www.facebook.com/kandammakids",
 } as const;

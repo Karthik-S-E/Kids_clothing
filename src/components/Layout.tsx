@@ -5,6 +5,7 @@ import { Header } from "./Header";
 import { WhatsAppFloat } from "./WhatsAppFloat";
 import { CartFloat } from "./CartFloat";
 import { CartModal } from "./CartModal";
+import { AiStylistModal } from "./AiStylistModal";
 
 export function Layout() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -18,6 +19,7 @@ export function Layout() {
       <Footer />
       <WhatsAppFloat />
       <CartFloat onClick={() => setIsCartOpen(true)} />
+      <AiStylistModal />
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );

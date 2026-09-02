@@ -1,49 +1,53 @@
 import { create } from "zustand";
+import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import type { Product, ProductInput } from "../config";
-import { seedProducts } from "../data/seedProducts";
-import { createProductRepository } from "../lib/productRepository";
-
-const repo = createProductRepository(seedProducts);
 
 type ProductState = {
   products: Product[];
   loading: boolean;
   error: string | null;
-  hydrate: () => Promise<void>;
-  addProduct: (input: ProductInput) => Promise<Product>;
+  hydrate: () => void;
+  addProduct: (input: ProductInput) => Promise<void>;
   updateProduct: (id: string, input: Partial<ProductInput>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
 };
 
-export const useProductStore = create<ProductState>((set, get) => ({
-  products: seedProducts,
+export const useProductStore = create<ProductState>((set) => ({
+  products: [],
   loading: false,
   error: null,
-  hydrate: async () => {
+  
+  hydrate: () => {
     set({ loading: true, error: null });
-    try {
-      const products = await repo.list();
-      set({ products, loading: false });
-    } catch (e) {
-      set({
-        error: e instanceof Error ? e.message : "Could not load products",
-        loading: false,
-      });
-    }
+    const q = query(collection(db, "products"));
+    
+    onSnapshot(q, 
+      (snapshot) => {
+        const products: Product[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Product[];
+        
+        set({ products, loading: false });
+      },
+      (error) => {
+        set({ error: error.message, loading: false });
+      }
+    );
   },
+  
   addProduct: async (input) => {
-    const product = await repo.create(input);
-    set({ products: [product, ...get().products] });
-    return product;
+    await addDoc(collection(db, "products"), input);
   },
+  
   updateProduct: async (id, input) => {
-    const updated = await repo.update(id, input);
-    set({
-      products: get().products.map((p) => (p.id === id ? updated : p)),
-    });
+    const docRef = doc(db, "products", id);
+    await updateDoc(docRef, input);
   },
+  
   deleteProduct: async (id) => {
-    await repo.remove(id);
-    set({ products: get().products.filter((p) => p.id !== id) });
-  },
+    const docRef = doc(db, "products", id);
+    await deleteDoc(docRef);
+  }
 }));
