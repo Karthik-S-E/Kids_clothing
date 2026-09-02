@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Cormorant Garamond", serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --color-gold: #d4af37;
+  --color-gold-soft: #f3e6b4;
+  --color-peacock: #0f766e;
+  --color-ink: #0b0a12;
+}
+
+:root {
+  --bg: #f6efe4;
+  --bg-elev: rgba(255, 252, 246, 0.72);
+  --text: #1a1523;
+  --muted: #5c5366;
+  --line: rgba(26, 21, 35, 0.1);
+  --glow: rgba(212, 175, 55, 0.35);
+  --accent: #0f766e;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0f0d;
+  --bg-elev: rgba(16, 20, 18, 0.72);
+  --text: #f6efe4;
+  --muted: #b7adbe;
+  --line: rgba(243, 230, 180, 0.12);
+  --glow: rgba(45, 212, 191, 0.22);
+  --accent: #2dd4bf;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(900px 500px at 10% -10%, var(--glow), transparent 55%),
+    radial-gradient(700px 420px at 110% 10%, rgba(15, 118, 110, 0.18), transparent 50%),
+    radial-gradient(800px 500px at 50% 120%, rgba(212, 175, 55, 0.12), transparent 55%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.glass {
+  background: var(--bg-elev);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--line);
+}
+
+.gold-text {
+  background: linear-gradient(120deg, #8a6b12, #f3e6b4, #d4af37, #8a6b12);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.neon-icon {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 0 28px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--gold) 50%, var(--accent));
+  border-radius: 999px;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(37, 211, 102, 0.7);
+  }
+}
+
+.whatsapp-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
