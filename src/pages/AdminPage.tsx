@@ -1,7 +1,6 @@
 import { type FormEvent, useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { genders, type Gender, type Product, type ProductInput } from "../config";
-import { AGE_RANGE_OPTIONS, normalizeAgeRange } from "../lib/ageRange";
 import { formatINR } from "../lib/formatINR";
 import { useAuthStore } from "../store/authStore";
 import { useProductStore } from "../store/productStore";
@@ -27,8 +26,7 @@ const empty: ProductInput = {
 };
 
 export function AdminPage() {
-  const user = useAuthStore((s) => s.user);
-  const initializing = useAuthStore((s) => s.initializing);
+  const authenticated = useAuthStore((s) => s.authenticated);
   const logout = useAuthStore((s) => s.logout);
   const { products, addProduct, updateProduct, deleteProduct } = useProductStore();
   const { settings, fetchSettings, updateSettings } = useBrandStore();
@@ -47,15 +45,7 @@ export function AdminPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  if (initializing) {
-    return (
-      <section className="mx-auto flex min-h-[60vh] max-w-md items-center justify-center px-6">
-        <p className="text-sm text-[var(--muted)]">Checking your session…</p>
-      </section>
-    );
-  }
-
-  if (!user) return <Navigate to="/admin/login" replace />;
+  if (!authenticated) return <Navigate to="/admin/login" replace />;
 
   const parsedColors = (form.color || "")
     .split(",")
@@ -114,7 +104,7 @@ export function AdminPage() {
       image: product.image,
       price: product.price,
       gender: product.gender,
-      ageRange: normalizeAgeRange(product.ageRange),
+      ageRange: product.ageRange,
       description: product.description,
       sizes: product.sizes || [],
       stockStatus: product.stockStatus ?? true,
@@ -158,36 +148,19 @@ export function AdminPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-
-    const parsedSizes = rawSizes
-      .split(",")
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean);
-
-    // Validate before touching Firestore so we never publish a half-empty card.
-    const problems: string[] = [];
-    if (!form.name.trim()) problems.push("a product name");
-    if (!form.image.trim()) problems.push("a main image");
-    if (!normalizeAgeRange(form.ageRange)) problems.push("an age range");
-    if (parsedSizes.length === 0) problems.push("at least one size");
-    if (!Number.isFinite(Number(form.price)) || Number(form.price) <= 0)
-      problems.push("a price above zero");
-
-    if (problems.length > 0) {
-      setMsg(`Please add ${problems.join(", ")}.`);
-      return;
-    }
-
     setBusy(true);
     setMsg(null);
 
     try {
+      const parsedSizes = rawSizes
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
+
       const payload: ProductInput = {
         ...form,
-        name: form.name.trim(),
-        ageRange: normalizeAgeRange(form.ageRange),
-        price: Number(form.price),
-        sizes: parsedSizes,
+        ageRange: form.ageRange.trim() || "All Ages",
+        sizes: parsedSizes.length > 0 ? parsedSizes : ["Standard"],
         stockQuantity: Number(form.stockQuantity) || 0,
       };
 
@@ -218,7 +191,7 @@ export function AdminPage() {
         </div>
         <button
           type="button"
-          onClick={() => void logout()}
+          onClick={logout}
           className="rounded-full border border-[var(--line)] px-4 py-2 text-sm hover:bg-white/5 transition-colors"
         >
           Sign out
@@ -412,21 +385,13 @@ export function AdminPage() {
 
               <label className="block text-sm">
                 Age Range / Group
-                <select
+                <input
                   required
                   value={form.ageRange}
                   onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
+                  placeholder="e.g. 4-8 Years"
                   className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
-                >
-                  <option value="" className="bg-zinc-900 text-white">
-                    Select an age range
-                  </option>
-                  {AGE_RANGE_OPTIONS.map((a) => (
-                    <option key={a} value={a} className="bg-zinc-900 text-white">
-                      {a}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
             </div>
 

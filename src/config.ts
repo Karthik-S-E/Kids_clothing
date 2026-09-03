@@ -12,7 +12,12 @@ export const social = {
   facebook: import.meta.env.VITE_FACEBOOK_URL ?? "https://www.facebook.com/kandammakids",
 } as const;
 
+export const adminConfig = {
+  password: import.meta.env.VITE_ADMIN_PASSWORD ?? "kandamma2026",
+} as const;
+
 export const genders = ["Boy", "Girl"] as const;
+export const ageRanges = ["1-4 Years", "2-5 Years", "4-8 Years", "5-8 Years"];
 
 export type Gender = (typeof genders)[number];
 export type AgeRange = string;
