@@ -364,10 +364,10 @@ export function AdminPage() {
           </form>
         </div>
 
-        {/* List Panel */}
-        <div className="glass rounded-[2rem] p-8 shadow-xl">
-          <h2 className="font-display text-3xl mb-6">Live Pieces ({products.length})</h2>
-          <div className="space-y-4">
+        {/* List Panel - Sticky with independent scrolling */}
+        <div className="glass rounded-[2rem] p-8 shadow-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)]">
+          <h2 className="font-display text-3xl mb-6 shrink-0">Live Pieces ({products.length})</h2>
+          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
             {products.map((p) => (
               <div key={p.id} className="glass flex items-center gap-4 rounded-3xl p-4 border border-[var(--line)]">
                 <img src={p.image} alt="" className="h-16 w-16 rounded-2xl object-cover" />
@@ -379,7 +379,7 @@ export function AdminPage() {
                     {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => onEdit(p)}

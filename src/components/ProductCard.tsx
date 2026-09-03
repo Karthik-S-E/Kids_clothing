@@ -13,6 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   );
   const addItem = useCartStore((s) => s.addItem);
   const inStock = product.stockStatus ?? true;
+  const quantity = product.stockQuantity;
 
   return (
     <motion.article
@@ -44,13 +45,26 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {!inStock && (
-          <div className="absolute right-3.5 top-3.5">
+        {/* Stock / Sold Out Badge */}
+        <div className="absolute right-3.5 top-3.5">
+          {!inStock ? (
             <span className="rounded-full bg-red-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow backdrop-blur-md">
               Out of Stock
             </span>
-          </div>
-        )}
+          ) : (
+            quantity !== undefined && quantity > 0 && (
+              <span
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold shadow backdrop-blur-md ${
+                  quantity <= 3
+                    ? "bg-amber-500/95 text-black animate-pulse"
+                    : "bg-black/65 text-emerald-300 border border-emerald-500/30"
+                }`}
+              >
+                {quantity <= 3 ? `Only ${quantity} Left` : `${quantity} in stock`}
+              </span>
+            )
+          )}
+        </div>
       </div>
 
       {/* Details body */}
