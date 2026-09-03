@@ -7,6 +7,7 @@ import { ContactPage } from "./pages/ContactPage";
 import { HomePage } from "./pages/HomePage";
 import { ProductPage } from "./pages/ProductPage";
 import { ShopPage } from "./pages/ShopPage";
+import { useAuthStore } from "./store/authStore";
 import { useProductStore } from "./store/productStore";
 import { useThemeStore } from "./store/themeStore";
 
@@ -14,11 +15,20 @@ export default function App() {
   const hydrate = useProductStore((s) => s.hydrate);
   const setTheme = useThemeStore((s) => s.setTheme);
   const theme = useThemeStore((s) => s.theme);
+  const subscribeAuth = useAuthStore((s) => s.subscribe);
 
   useEffect(() => {
     setTheme(theme);
-    void hydrate();
-  }, [hydrate, setTheme, theme]);
+  }, [setTheme, theme]);
+
+  useEffect(() => {
+    const unsubscribeProducts = hydrate();
+    const unsubscribeAuth = subscribeAuth();
+    return () => {
+      unsubscribeProducts?.();
+      unsubscribeAuth();
+    };
+  }, [hydrate, subscribeAuth]);
 
   return (
     <BrowserRouter>

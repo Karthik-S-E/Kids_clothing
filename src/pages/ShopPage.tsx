@@ -13,13 +13,24 @@ export function ShopPage() {
 
   const searchFiltered = useMemo(() => {
     if (!query) return filtered;
-    return filtered.filter((p: any) => {
-      const nameMatch = p.name?.toLowerCase().includes(query);
-      const descMatch = p.description?.toLowerCase().includes(query);
-      const categoryMatch = p.category?.toLowerCase().includes(query);
-      const genderMatch = p.gender?.toLowerCase().includes(query);
-      const ageMatch = p.ageGroup?.toLowerCase().includes(query) || p.age?.toLowerCase().includes(query);
-      return Boolean(nameMatch || descMatch || categoryMatch || genderMatch || ageMatch);
+    // Only fields that actually exist on Product. Previously this searched
+    // p.category / p.ageGroup / p.age, which are not part of the model.
+    return filtered.filter((p) => {
+      const haystack = [
+        p.name,
+        p.description,
+        p.gender,
+        p.ageRange,
+        p.color,
+        p.style,
+        p.occasion,
+        p.designNo,
+        ...(p.sizes ?? []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
     });
   }, [filtered, query]);
 

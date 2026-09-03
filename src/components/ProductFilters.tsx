@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { genders, type Gender, type Product } from "../config";
+import { compareAgeRange, normalizeAgeRange } from "../lib/ageRange";
 
 export type Filters = {
   gender: Gender | "All";
@@ -25,11 +26,10 @@ export function ProductFilters({
   const availableAgeRanges = useMemo(() => {
     const set = new Set<string>();
     products.forEach((p) => {
-      if (p.ageRange && p.ageRange.trim()) {
-        set.add(p.ageRange.trim());
-      }
+      const label = normalizeAgeRange(p.ageRange);
+      if (label) set.add(label);
     });
-    return Array.from(set).sort();
+    return Array.from(set).sort(compareAgeRange);
   }, [products]);
 
   const hasActiveFilters = filters.gender !== "All" || filters.age !== "All";
@@ -59,15 +59,19 @@ export function ProductFilters({
         <div className="flex flex-wrap gap-1.5">
           {(["All", ...genders] as const).map((g) => {
             const active = filters.gender === g;
+            const empty = g !== "All" && counts[g] === 0;
             return (
               <button
                 key={g}
                 type="button"
+                disabled={empty}
                 onClick={() => onChange({ ...filters, gender: g })}
                 className={`rounded-full px-3 py-1 text-xs transition-all ${
                   active
                     ? "bg-gold font-bold text-ink shadow-sm"
-                    : "border border-[var(--line)] text-[var(--text)] hover:border-gold/60"
+                    : empty
+                      ? "border border-[var(--line)] text-[var(--muted)] opacity-40 cursor-not-allowed"
+                      : "border border-[var(--line)] text-[var(--text)] hover:border-gold/60"
                 }`}
               >
                 {g}
@@ -125,7 +129,7 @@ export function useProductFilters(products: Product[]) {
     () =>
       products.filter((p) => {
         if (filters.gender !== "All" && p.gender !== filters.gender) return false;
-        if (filters.age !== "All" && p.ageRange !== filters.age) return false;
+        if (filters.age !== "All" && normalizeAgeRange(p.ageRange) !== filters.age) return false;
         return true;
       }),
     [products, filters],
