@@ -48,6 +48,7 @@ export function Header() {
           <NavItem to="/">Home</NavItem>
           <NavItem to="/shop">Shop</NavItem>
           <NavItem to="/contact">Contact</NavItem>
+          <NavItem to="/admin">Admin</NavItem>
         </nav>
         <div className="flex items-center gap-2">
           <NavbarSearch onSearch={handleSearch} />
@@ -70,6 +71,7 @@ export function Header() {
         <NavItem to="/">Home</NavItem>
         <NavItem to="/shop">Shop</NavItem>
         <NavItem to="/contact">Contact</NavItem>
+        <NavItem to="/admin">Admin</NavItem>
       </nav>
     </header>
   );
