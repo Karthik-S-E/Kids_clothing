@@ -69,9 +69,9 @@ export function ContactPage() {
             const fd = new FormData(e.currentTarget);
             const name = String(fd.get("name") ?? "");
             const note = String(fd.get("note") ?? "");
-            window.open(
-              whatsappChatUrl(`Hi Kandamma Kids! I'm ${name}. ${note}`),
-              "_blank",
+            // Assigning location instead of window.open avoids mobile popup blockers.
+            window.location.href = whatsappChatUrl(
+              `Hi Kandamma Kids! I'm ${name}. ${note}`,
             );
           }}
         >

@@ -5,7 +5,10 @@ import { ProductCard } from "../components/ProductCard";
 import { useProductStore } from "../store/productStore";
 
 export function HomePage() {
-  const products = useProductStore((s) => s.products).slice(0, 4);
+  const allProducts = useProductStore((s) => s.products);
+  const products = allProducts.slice(0, 4);
+  // The first live product doubles as the hero shot; falls back to the studio image.
+  const heroImage = allProducts[0]?.image ?? "/hero-ethnic.jpg";
 
   return (
     <>
@@ -68,9 +71,10 @@ export function HomePage() {
           className="relative h-[480px] w-full overflow-hidden rounded-[2.5rem] border border-[var(--line)] shadow-2xl lg:h-[580px]"
         >
           <img
-            src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=1200&q=80"
-            alt="Kandamma Kids ethnic festive clothing"
+            src={heroImage}
+            alt="Children wearing Kandamma Kids festive ethnic outfits"
             className="h-full w-full object-cover object-center"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           
@@ -105,11 +109,25 @@ export function HomePage() {
             View all pieces →
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        {products.length === 0 ? (
+          <p className="glass rounded-3xl p-10 text-center text-[var(--muted)]">
+            New pieces are being photographed. Check back shortly.
+          </p>
+        ) : (
+          <div
+            className={`grid gap-6 sm:grid-cols-2 ${
+              products.length >= 4
+                ? "lg:grid-cols-4"
+                : products.length === 3
+                  ? "lg:grid-cols-3"
+                  : "lg:grid-cols-2 lg:max-w-3xl"
+            }`}
+          >
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
       </motion.section>
     </>
   );

@@ -37,17 +37,6 @@ export function AiStylistModal() {
   async function handleSend() {
     if (!input.trim() || loading) return;
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: input.trim() },
-        { role: "model", text: "API key is not configured in .env." },
-      ]);
-      setInput("");
-      return;
-    }
-
     const userMsg = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
@@ -74,31 +63,29 @@ STRICT RESPONSE RULES:
 1. NEVER repeat greetings ("Hello", "Welcome to Kandamma Kids") after the very first interaction. Jump straight into recommendations or clarifying questions.
 2. DO NOT use raw markdown formatting asterisks like "**Product**" or bullet list stars "*". Speak in natural, polished sentences.
 3. Whenever you suggest a product from the inventory, include its exact ID inside double curly brackets, e.g.: {{ID:kk-peacock-kurta}}. The UI will automatically render interactive product cards for them.
-4. If an outfit is out of stock, clearly mention it.
-5. Keep answers concise, helpful, and under 3-4 sentences.`;
+4. Only ever recommend IDs that appear in the inventory above. If nothing suits, say so and suggest messaging on WhatsApp.
+5. If an outfit is out of stock, clearly mention it.
+6. Keep answers concise, helpful, and under 3-4 sentences.`;
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
-
-      const res = await fetch(endpoint, {
+      // The API key lives server-side in /api/stylist. A relative URL keeps this
+      // working on any host without hardcoding a domain.
+      const res = await fetch("/api/stylist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemInstruction }],
-          },
-          contents: updatedHistory,
-        }),
+        body: JSON.stringify({ systemInstruction, contents: updatedHistory }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || "API error");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "The stylist is unavailable right now.");
 
-      const rawReply =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "I couldn't process that right now. Please message us on WhatsApp!";
+      const rawReply: string = data?.text || "";
+      if (!rawReply.trim()) throw new Error("The stylist had nothing to add. Try rephrasing?");
 
-      const idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)].map((m) => m[1].trim());
-      const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").trim();
+      const idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)]
+        .map((m) => m[1].trim())
+        // Guard against the model inventing IDs that aren't in the catalogue.
+        .filter((id) => products.some((p) => p.id === id));
+      const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").replace(/\s{2,}/g, " ").trim();
 
       setMessages((prev) => [
         ...prev,
@@ -113,13 +100,16 @@ STRICT RESPONSE RULES:
         ...updatedHistory,
         { role: "model", parts: [{ text: rawReply }] },
       ]);
-    } catch (err: any) {
-      console.error("Gemini Stylist Error:", err);
+    } catch (err) {
+      console.error("Stylist error:", err);
       setMessages((prev) => [
         ...prev,
         {
           role: "model",
-          text: err?.message || "Connection failed. Please check your network.",
+          text:
+            err instanceof Error
+              ? err.message
+              : "Connection failed. Please check your network.",
         },
       ]);
     } finally {
