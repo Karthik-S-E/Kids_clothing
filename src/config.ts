@@ -17,7 +17,7 @@ export const adminConfig = {
 } as const;
 
 export const genders = ["Boy", "Girl"] as const;
-export const ageRanges = ["1-4 Years", "2-5 Years", "5-8 Years"];
+export const ageRanges = ["1-4 Years", "2-5 Years", "4-8 Years", "5-8 Years"];
 
 export type Gender = (typeof genders)[number];
 export type AgeRange = string;
@@ -33,6 +33,11 @@ export type Product = {
   sizes: string[];
   stockStatus?: boolean;
   stockQuantity?: number;
+  designNo?: string;
+  color?: string;
+  style?: string;
+  occasion?: string;
+  colorImages?: Record<string, string>;
   meeshoUrl?: string;
   flipkartUrl?: string;
 };

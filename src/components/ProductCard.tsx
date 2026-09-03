@@ -35,7 +35,7 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
-        {/* Badges */}
+        {/* Badges on image */}
         <div className="absolute left-3.5 top-3.5 flex flex-wrap gap-1.5">
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
             {product.gender}
@@ -43,27 +43,6 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="rounded-full bg-gold/90 px-2.5 py-1 text-[10px] font-bold text-ink backdrop-blur-md">
             {product.ageRange}
           </span>
-        </div>
-
-        {/* Stock / Sold Out Badge */}
-        <div className="absolute right-3.5 top-3.5">
-          {!inStock ? (
-            <span className="rounded-full bg-red-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow backdrop-blur-md">
-              Out of Stock
-            </span>
-          ) : (
-            quantity !== undefined && quantity > 0 && (
-              <span
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold shadow backdrop-blur-md ${
-                  quantity <= 3
-                    ? "bg-amber-500/95 text-black animate-pulse"
-                    : "bg-black/65 text-emerald-300 border border-emerald-500/30"
-                }`}
-              >
-                {quantity <= 3 ? `Only ${quantity} Left` : `${quantity} in stock`}
-              </span>
-            )
-          )}
         </div>
       </div>
 
@@ -84,6 +63,31 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="mt-2 line-clamp-2 text-xs text-[var(--muted)] leading-relaxed">
             {product.description}
           </p>
+
+          {/* Stock status indicator */}
+          <div className="mt-3">
+            {!inStock ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Sold Out
+              </span>
+            ) : quantity !== undefined && quantity > 0 ? (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                  quantity <= 3
+                    ? "bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold"
+                    : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    quantity <= 3 ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
+                  }`}
+                />
+                {quantity <= 3 ? `Only ${quantity} left in stock!` : `${quantity} in stock`}
+              </span>
+            ) : null}
+          </div>
         </div>
 
         {/* Action area */}

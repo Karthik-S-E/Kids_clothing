@@ -16,6 +16,11 @@ const empty: ProductInput = {
   sizes: [],
   stockStatus: true,
   stockQuantity: 5,
+  designNo: "",
+  color: "",
+  style: "",
+  occasion: "Birthday Parties, Weddings, Functions & Special Occasions",
+  colorImages: {},
   meeshoUrl: "",
   flipkartUrl: "",
 };
@@ -33,55 +38,64 @@ export function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
 
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
   if (!authenticated) return <Navigate to="/admin/login" replace />;
 
-  function onUploadLogo(file?: File) {
-    if (!file) return;
-    setLogoBusy(true);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 400;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL("image/jpeg", 0.85);
+  const parsedColors = (form.color || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
 
-        await updateSettings({ logoUrl: base64 });
-        setLogoBusy(false);
+  function compressAndConvert(file: File, maxWidth = 600, quality = 0.7): Promise<string> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const scaleSize = maxWidth / img.width;
+          canvas.width = maxWidth;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = e.target?.result as string;
       };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
   }
 
-  function onFile(file?: File) {
+  async function onUploadLogo(file?: File) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 600;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-        setForm((f) => ({ ...f, image: compressedBase64 }));
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    setLogoBusy(true);
+    const base64 = await compressAndConvert(file, 400, 0.85);
+    await updateSettings({ logoUrl: base64 });
+    setLogoBusy(false);
+  }
+
+  async function onMainFile(file?: File) {
+    if (!file) return;
+    const base64 = await compressAndConvert(file, 600, 0.7);
+    setForm((f) => ({ ...f, image: base64 }));
+  }
+
+  async function onColorFile(colorName: string, file?: File) {
+    if (!file) return;
+    const base64 = await compressAndConvert(file, 600, 0.7);
+    setForm((f) => ({
+      ...f,
+      colorImages: {
+        ...(f.colorImages || {}),
+        [colorName]: base64,
+      },
+    }));
   }
 
   function onEdit(product: Product) {
@@ -95,10 +109,15 @@ export function AdminPage() {
       sizes: product.sizes || [],
       stockStatus: product.stockStatus ?? true,
       stockQuantity: product.stockQuantity ?? 5,
+      designNo: product.designNo || "",
+      color: product.color || "",
+      style: product.style || "",
+      occasion: product.occasion || "Birthday Parties, Weddings, Functions & Special Occasions",
+      colorImages: product.colorImages || {},
       meeshoUrl: product.meeshoUrl || "",
       flipkartUrl: product.flipkartUrl || "",
     });
-    setRawSizes((product.sizes || []).join(", "));
+    setRawSizes((product.sizes || []).join(", ").toUpperCase());
     setEditingId(product.id);
     setMsg(null);
   }
@@ -110,17 +129,20 @@ export function AdminPage() {
     setMsg(null);
   }
 
-  async function onDelete(product: Product) {
-    const ok = window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`);
-    if (!ok) return;
+  async function handleConfirmDelete() {
+    if (!deletingProduct) return;
+    setDeleteBusy(true);
 
     try {
-      await deleteProduct(product.id);
-      if (editingId === product.id) {
+      await deleteProduct(deletingProduct.id);
+      if (editingId === deletingProduct.id) {
         onCancelEdit();
       }
+      setDeletingProduct(null);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Failed to delete product.");
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -132,7 +154,7 @@ export function AdminPage() {
     try {
       const parsedSizes = rawSizes
         .split(",")
-        .map((s) => s.trim())
+        .map((s) => s.trim().toUpperCase())
         .filter(Boolean);
 
       const payload: ProductInput = {
@@ -225,8 +247,92 @@ export function AdminPage() {
               />
             </label>
 
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                Design No
+                <input
+                  value={form.designNo || ""}
+                  onChange={(e) => setForm({ ...form, designNo: e.target.value.toUpperCase() })}
+                  placeholder="e.g. KK-101"
+                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none uppercase"
+                />
+              </label>
+
+              <label className="block text-sm">
+                Color (comma separated)
+                <input
+                  value={form.color || ""}
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
+                  placeholder="e.g. Yellow, Pink, Blue"
+                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                />
+              </label>
+            </div>
+
+            {/* Individual Color Photo Uploads */}
+            {parsedColors.length > 0 && (
+              <div className="rounded-2xl border border-[var(--line)] bg-white/5 p-4 space-y-3">
+                <p className="text-xs uppercase font-bold tracking-wider text-gold">
+                  Photos for Each Color (Optional):
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {parsedColors.map((clr) => (
+                    <div key={clr} className="rounded-xl border border-[var(--line)] p-2.5 bg-black/20 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-white">{clr}</span>
+                        {form.colorImages?.[clr] && (
+                          <span className="text-[10px] text-emerald-400 font-bold">Uploaded ✓</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {form.colorImages?.[clr] ? (
+                          <img
+                            src={form.colorImages[clr]}
+                            alt={clr}
+                            className="h-10 w-10 rounded-lg object-cover border border-gold"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center text-[10px] text-[var(--muted)]">
+                            None
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => onColorFile(clr, e.target.files?.[0])}
+                          className="w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-gold file:px-2.5 file:py-1 file:text-[10px] file:font-semibold file:text-ink cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                Style
+                <input
+                  value={form.style || ""}
+                  onChange={(e) => setForm({ ...form, style: e.target.value })}
+                  placeholder="e.g. Kurta Pajama, Frock, Gown"
+                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                />
+              </label>
+
+              <label className="block text-sm">
+                Occasion
+                <input
+                  value={form.occasion || ""}
+                  onChange={(e) => setForm({ ...form, occasion: e.target.value })}
+                  placeholder="e.g. Weddings, Parties & Festivals"
+                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                />
+              </label>
+            </div>
+
             <label className="block text-sm">
-              Image URL
+              Default Main Image URL
               <input
                 value={form.image.startsWith("data:") ? "" : form.image}
                 onChange={(e) => setForm({ ...form, image: e.target.value })}
@@ -236,11 +342,11 @@ export function AdminPage() {
             </label>
 
             <label className="block text-sm">
-              Or upload image
+              Or upload main image
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => onFile(e.target.files?.[0])}
+                onChange={(e) => onMainFile(e.target.files?.[0])}
                 className="mt-1 w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-gold file:px-4 file:py-2 file:text-sm file:font-semibold file:text-ink cursor-pointer"
               />
             </label>
@@ -278,12 +384,12 @@ export function AdminPage() {
               </label>
 
               <label className="block text-sm">
-                Age Range
+                Age Range / Group
                 <input
                   required
                   value={form.ageRange}
                   onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
-                  placeholder="e.g. 2-5 Years"
+                  placeholder="e.g. 4-8 Years"
                   className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
                 />
               </label>
@@ -294,9 +400,9 @@ export function AdminPage() {
               <input
                 required
                 value={rawSizes}
-                onChange={(e) => setRawSizes(e.target.value)}
+                onChange={(e) => setRawSizes(e.target.value.toUpperCase())}
                 placeholder="2Y, 3Y, 4Y, 5Y"
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none uppercase"
               />
             </label>
 
@@ -376,6 +482,7 @@ export function AdminPage() {
                   <p className="text-sm text-gold">{formatINR(p.price)}</p>
                   <p className="text-xs text-[var(--muted)]">
                     {p.ageRange} · Sizes: {(p.sizes || []).join(", ")}
+                    {p.designNo && ` · #${p.designNo}`}
                     {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
                   </p>
                 </div>
@@ -389,8 +496,8 @@ export function AdminPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDelete(p)}
-                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400"
+                    onClick={() => setDeletingProduct(p)}
+                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     Remove
                   </button>
@@ -400,6 +507,54 @@ export function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {deletingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="glass max-w-md w-full rounded-[2rem] border border-[var(--line)] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 font-bold">
+                ✕
+              </div>
+              <div>
+                <h3 className="font-display text-xl font-semibold">Delete Product?</h3>
+                <p className="text-xs text-[var(--muted)]">This cannot be recovered once removed.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white/5 p-3">
+              <img
+                src={deletingProduct.image}
+                alt={deletingProduct.name}
+                className="h-12 w-12 rounded-xl object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{deletingProduct.name}</p>
+                <p className="text-xs text-gold">{formatINR(deletingProduct.price)}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={() => setDeletingProduct(null)}
+                className="flex-1 rounded-full border border-[var(--line)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-gold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={handleConfirmDelete}
+                className="flex-1 rounded-full bg-red-500 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {deleteBusy ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
