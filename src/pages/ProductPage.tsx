@@ -21,14 +21,17 @@ export function ProductPage() {
   }
 
   const inStock = product.stockStatus ?? true;
+  const quantity = product.stockQuantity;
 
   return (
     <section className="mx-auto grid max-w-6xl gap-10 px-6 py-10 lg:grid-cols-2">
-      <div className="overflow-hidden rounded-[2rem] border border-[var(--line)]">
+      <div className="flex justify-center items-center w-full">
         <img
           src={product.image}
           alt={product.name}
-          className={`aspect-[4/5] w-full object-cover ${!inStock ? "grayscale opacity-60" : ""}`}
+          className={`w-full max-h-[620px] rounded-3xl object-contain shadow-2xl ${
+            !inStock ? "grayscale opacity-60" : ""
+          }`}
         />
       </div>
 
@@ -39,6 +42,40 @@ export function ProductPage() {
         <h1 className="mt-2 font-display text-5xl">{product.name}</h1>
         <p className="mt-4 text-3xl font-semibold text-gold">{formatINR(product.price)}</p>
         <p className="mt-4 text-[var(--muted)] leading-relaxed">{product.description}</p>
+
+        {/* Stock Status / Remaining Quantity Indicator */}
+        <div className="mt-6 flex items-center gap-2">
+          {inStock ? (
+            quantity !== undefined && quantity > 0 ? (
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold ${
+                  quantity <= 3
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                    : "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    quantity <= 3 ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
+                  }`}
+                />
+                {quantity <= 3
+                  ? `Only ${quantity} piece${quantity > 1 ? "s" : ""} left in stock!`
+                  : `${quantity} in stock`}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-1 text-xs font-semibold text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                In Stock
+              </span>
+            )
+          ) : (
+            <span className="inline-flex items-center gap-2 rounded-full bg-red-500/15 border border-red-500/30 px-3.5 py-1 text-xs font-semibold text-red-300">
+              <span className="h-2 w-2 rounded-full bg-red-400" />
+              Out of Stock
+            </span>
+          )}
+        </div>
 
         <p className="mt-8 text-sm uppercase tracking-widest text-[var(--muted)]">Available Sizes</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -97,4 +134,4 @@ export function ProductPage() {
       </div>
     </section>
   );
-} 
+}

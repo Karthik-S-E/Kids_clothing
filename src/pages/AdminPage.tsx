@@ -15,6 +15,7 @@ const empty: ProductInput = {
   description: "",
   sizes: [],
   stockStatus: true,
+  stockQuantity: 5,
   meeshoUrl: "",
   flipkartUrl: "",
 };
@@ -93,6 +94,7 @@ export function AdminPage() {
       description: product.description,
       sizes: product.sizes || [],
       stockStatus: product.stockStatus ?? true,
+      stockQuantity: product.stockQuantity ?? 5,
       meeshoUrl: product.meeshoUrl || "",
       flipkartUrl: product.flipkartUrl || "",
     });
@@ -108,6 +110,20 @@ export function AdminPage() {
     setMsg(null);
   }
 
+  async function onDelete(product: Product) {
+    const ok = window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`);
+    if (!ok) return;
+
+    try {
+      await deleteProduct(product.id);
+      if (editingId === product.id) {
+        onCancelEdit();
+      }
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Failed to delete product.");
+    }
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -119,10 +135,11 @@ export function AdminPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const payload = {
+      const payload: ProductInput = {
         ...form,
         ageRange: form.ageRange.trim() || "All Ages",
         sizes: parsedSizes.length > 0 ? parsedSizes : ["Standard"],
+        stockQuantity: Number(form.stockQuantity) || 0,
       };
 
       if (editingId) {
@@ -294,15 +311,35 @@ export function AdminPage() {
               />
             </label>
 
-            <label className="flex items-center gap-3 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.stockStatus ?? true}
-                onChange={(e) => setForm({ ...form, stockStatus: e.target.checked })}
-                className="h-5 w-5 accent-gold"
-              />
-              <span>In Stock</span>
-            </label>
+            <div className="flex flex-wrap items-center gap-6 pt-2">
+              <label className="flex items-center gap-3 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.stockStatus ?? true}
+                  onChange={(e) => setForm({ ...form, stockStatus: e.target.checked })}
+                  className="h-5 w-5 accent-gold cursor-pointer"
+                />
+                <span>In Stock</span>
+              </label>
+
+              {(form.stockStatus ?? true) && (
+                <label className="flex items-center gap-2 text-sm">
+                  <span className="text-[var(--muted)]">Stock Quantity:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.stockQuantity ?? ""}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        stockQuantity: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                      })
+                    }
+                    className="w-24 rounded-xl border border-[var(--line)] bg-transparent px-3 py-1.5 focus:border-gold outline-none"
+                  />
+                </label>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-4">
               {editingId && (
@@ -337,7 +374,10 @@ export function AdminPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="text-sm text-gold">{formatINR(p.price)}</p>
-                  <p className="text-xs text-[var(--muted)]">{p.ageRange} · Sizes: {(p.sizes || []).join(", ")}</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {p.ageRange} · Sizes: {(p.sizes || []).join(", ")}
+                    {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -349,7 +389,7 @@ export function AdminPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => deleteProduct(p.id)}
+                    onClick={() => onDelete(p)}
                     className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400"
                   >
                     Remove

@@ -2,7 +2,7 @@ export const brand = {
   name: "Kandamma Kids",
   tagline: "Little gods. Big vibes.",
   city: "India",
-  whatsappNumber: "919901200520"
+  whatsappNumber: "919901200520",
 } as const;
 
 /** Update these to your live brand accounts and WhatsApp business number (country code, no +). */
@@ -32,6 +32,7 @@ export type Product = {
   description: string;
   sizes: string[];
   stockStatus?: boolean;
+  stockQuantity?: number;
   meeshoUrl?: string;
   flipkartUrl?: string;
 };
