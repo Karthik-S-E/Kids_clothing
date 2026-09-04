@@ -3,7 +3,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDoCACCNdgVtbb4vb0zdthZc7FM6CGyBxw",
+  apiKey: "AIzaSyDoCaCCNdgVtbb4vb0zdthZc7FM6CGyBxw",
   authDomain: "kandamma-kids.firebaseapp.com",
   projectId: "kandamma-kids",
   storageBucket: "kandamma-kids.appspot.com",

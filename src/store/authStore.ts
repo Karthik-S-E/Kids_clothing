@@ -22,7 +22,8 @@ export const useAuthStore = create<AuthState>(() => ({
     try {
       await signInWithEmailAndPassword(auth, email, password);
       return true;
-    } catch {
+    } catch (err) {
+      console.error("Firebase Auth error:", err);
       return false;
     }
   },
