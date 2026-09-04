@@ -4,4 +4,15 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          firebase: ["firebase/app", "firebase/firestore", "firebase/auth"],
+          motion: ["framer-motion"],
+        },
+      },
+    },
+  },
 });

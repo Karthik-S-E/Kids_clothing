@@ -1,24 +1,38 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { adminConfig } from "../config";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User,
+} from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 type AuthState = {
-  authenticated: boolean;
-  login: (password: string) => boolean;
-  logout: () => void;
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      authenticated: false,
-      login: (password) => {
-        const ok = password === adminConfig.password;
-        if (ok) set({ authenticated: true });
-        return ok;
-      },
-      logout: () => set({ authenticated: false }),
-    }),
-    { name: "kandamma.admin" },
-  ),
-);
+export const useAuthStore = create<AuthState>(() => ({
+  user: null,
+  loading: true,
+
+  login: async (email, password) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  logout: async () => {
+    await signOut(auth);
+  },
+}));
+
+/* Subscribe once so the loading state resolves before any component renders */
+onAuthStateChanged(auth, (user) => {
+  useAuthStore.setState({ user, loading: false });
+});

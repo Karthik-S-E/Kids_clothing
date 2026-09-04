@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { genders, type Gender, type Product } from "../config";
+import { genders, normaliseAgeRange, type Gender, type Product } from "../config";
 
 export type Filters = {
   gender: Gender | "All";
@@ -23,13 +23,19 @@ export function ProductFilters({
   }, [products]);
 
   const availableAgeRanges = useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, string>(); // normalised → original label
     products.forEach((p) => {
       if (p.ageRange && p.ageRange.trim()) {
-        set.add(p.ageRange.trim());
+        const norm = normaliseAgeRange(p.ageRange);
+        if (!map.has(norm)) map.set(norm, norm);
       }
     });
-    return Array.from(set).sort();
+    // Sort numerically by the low end of the range
+    return Array.from(map.values()).sort((a, b) => {
+      const aNum = parseInt(a, 10) || 0;
+      const bNum = parseInt(b, 10) || 0;
+      return aNum - bNum;
+    });
   }, [products]);
 
   const hasActiveFilters = filters.gender !== "All" || filters.age !== "All";
@@ -125,7 +131,7 @@ export function useProductFilters(products: Product[]) {
     () =>
       products.filter((p) => {
         if (filters.gender !== "All" && p.gender !== filters.gender) return false;
-        if (filters.age !== "All" && p.ageRange !== filters.age) return false;
+        if (filters.age !== "All" && normaliseAgeRange(p.ageRange) !== filters.age) return false;
         return true;
       }),
     [products, filters],

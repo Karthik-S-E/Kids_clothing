@@ -37,17 +37,6 @@ export function AiStylistModal() {
   async function handleSend() {
     if (!input.trim() || loading) return;
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: input.trim() },
-        { role: "model", text: "API key is not configured in .env." },
-      ]);
-      setInput("");
-      return;
-    }
-
     const userMsg = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
@@ -77,25 +66,19 @@ STRICT RESPONSE RULES:
 4. If an outfit is out of stock, clearly mention it.
 5. Keep answers concise, helpful, and under 3-4 sentences.`;
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
-
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/stylist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemInstruction }],
-          },
-          contents: updatedHistory,
+          history: updatedHistory,
+          systemInstruction,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || "API error");
+      if (!res.ok) throw new Error(data?.error || "API error");
 
-      const rawReply =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "I couldn't process that right now. Please message us on WhatsApp!";
+      const rawReply = data?.text || "I couldn't process that right now. Please message us on WhatsApp!";
 
       const idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)].map((m) => m[1].trim());
       const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").trim();
@@ -113,14 +96,12 @@ STRICT RESPONSE RULES:
         ...updatedHistory,
         { role: "model", parts: [{ text: rawReply }] },
       ]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Gemini Stylist Error:", err);
+      const message = err instanceof Error ? err.message : "Connection failed. Please check your network.";
       setMessages((prev) => [
         ...prev,
-        {
-          role: "model",
-          text: err?.message || "Connection failed. Please check your network.",
-        },
+        { role: "model", text: message },
       ]);
     } finally {
       setLoading(false);

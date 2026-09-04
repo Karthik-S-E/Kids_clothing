@@ -13,20 +13,25 @@ type ProductState = {
   deleteProduct: (id: string) => Promise<void>;
 };
 
+let unsubscribe: (() => void) | null = null;
+
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
   loading: false,
   error: null,
   
   hydrate: () => {
+    // Prevent multiple subscriptions
+    if (unsubscribe) return;
+
     set({ loading: true, error: null });
     const q = query(collection(db, "products"));
     
-    onSnapshot(q, 
+    unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        const products: Product[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const products: Product[] = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
         })) as Product[];
         
         set({ products, loading: false });

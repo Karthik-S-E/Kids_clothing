@@ -1,6 +1,6 @@
 import { type FormEvent, useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { genders, type Gender, type Product, type ProductInput } from "../config";
+import { genders, ageRanges as defaultAgeRanges, type Gender, type Product, type ProductInput } from "../config";
 import { formatINR } from "../lib/formatINR";
 import { useAuthStore } from "../store/authStore";
 import { useProductStore } from "../store/productStore";
@@ -26,7 +26,7 @@ const empty: ProductInput = {
 };
 
 export function AdminPage() {
-  const authenticated = useAuthStore((s) => s.authenticated);
+  const { user, loading } = useAuthStore();
   const logout = useAuthStore((s) => s.logout);
   const { products, addProduct, updateProduct, deleteProduct } = useProductStore();
   const { settings, fetchSettings, updateSettings } = useBrandStore();
@@ -36,6 +36,7 @@ export function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [logoBusy, setLogoBusy] = useState(false);
 
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
@@ -45,7 +46,15 @@ export function AdminPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  if (!authenticated) return <Navigate to="/admin/login" replace />;
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <p className="text-[var(--muted)]">Loading…</p>
+      </section>
+    );
+  }
+
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   const parsedColors = (form.color || "")
     .split(",")
@@ -120,6 +129,7 @@ export function AdminPage() {
     setRawSizes((product.sizes || []).join(", ").toUpperCase());
     setEditingId(product.id);
     setMsg(null);
+    setValidationErrors([]);
   }
 
   function onCancelEdit() {
@@ -127,6 +137,22 @@ export function AdminPage() {
     setRawSizes("");
     setEditingId(null);
     setMsg(null);
+    setValidationErrors([]);
+  }
+
+  function validate(): string[] {
+    const errors: string[] = [];
+    if (!form.name.trim()) errors.push("Product name is required.");
+    if (!form.image) errors.push("Product image is required (upload or URL).");
+    if (!form.description.trim()) errors.push("Description is required.");
+    if (form.price <= 0) errors.push("Price must be greater than zero.");
+    if (!form.ageRange.trim()) errors.push("Age range is required.");
+    const parsedSizes = rawSizes
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parsedSizes.length === 0) errors.push("At least one size is required.");
+    return errors;
   }
 
   async function handleConfirmDelete() {
@@ -150,6 +176,14 @@ export function AdminPage() {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
+    setValidationErrors([]);
+
+    const errors = validate();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setBusy(false);
+      return;
+    }
 
     try {
       const parsedSizes = rawSizes
@@ -192,7 +226,7 @@ export function AdminPage() {
         <button
           type="button"
           onClick={logout}
-          className="rounded-full border border-[var(--line)] px-4 py-2 text-sm hover:bg-white/5 transition-colors"
+          className="rounded-full border border-[var(--line)] px-4 py-2 text-sm hover:bg-white/5 transition-colors cursor-pointer"
         >
           Sign out
         </button>
@@ -235,6 +269,18 @@ export function AdminPage() {
           <h2 className="font-display text-3xl mb-6">
             {editingId ? "Edit piece" : "Publish a piece"}
           </h2>
+
+          {validationErrors.length > 0 && (
+            <div className="mb-4 rounded-2xl border border-red-400/40 bg-red-500/10 p-4">
+              <p className="text-sm font-semibold text-red-400 mb-1">Please fix the following:</p>
+              <ul className="list-disc list-inside text-xs text-red-300 space-y-0.5">
+                {validationErrors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <form onSubmit={onSubmit} className="space-y-4">
             <label className="block text-sm">
               Product name
@@ -385,13 +431,19 @@ export function AdminPage() {
 
               <label className="block text-sm">
                 Age Range / Group
-                <input
+                <select
                   required
                   value={form.ageRange}
                   onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
-                  placeholder="e.g. 4-8 Years"
                   className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
-                />
+                >
+                  <option value="" className="bg-zinc-900 text-white">Select age range</option>
+                  {defaultAgeRanges.map((a) => (
+                    <option key={a} value={a} className="bg-zinc-900 text-white">
+                      {a}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
 
@@ -453,7 +505,7 @@ export function AdminPage() {
                   type="button"
                   onClick={onCancelEdit}
                   disabled={busy}
-                  className="flex-1 rounded-full border border-[var(--line)] py-3 text-sm font-semibold uppercase tracking-widest hover:border-gold"
+                  className="flex-1 rounded-full border border-[var(--line)] py-3 text-sm font-semibold uppercase tracking-widest hover:border-gold cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -490,14 +542,14 @@ export function AdminPage() {
                   <button
                     type="button"
                     onClick={() => onEdit(p)}
-                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs hover:border-gold"
+                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs hover:border-gold cursor-pointer"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeletingProduct(p)}
-                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors"
+                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                   >
                     Remove
                   </button>
@@ -539,7 +591,7 @@ export function AdminPage() {
                 type="button"
                 disabled={deleteBusy}
                 onClick={() => setDeletingProduct(null)}
-                className="flex-1 rounded-full border border-[var(--line)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-gold transition-colors"
+                className="flex-1 rounded-full border border-[var(--line)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-gold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -547,7 +599,7 @@ export function AdminPage() {
                 type="button"
                 disabled={deleteBusy}
                 onClick={handleConfirmDelete}
-                className="flex-1 rounded-full bg-red-500 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-1 rounded-full bg-red-500 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {deleteBusy ? "Deleting..." : "Yes, Delete"}
               </button>

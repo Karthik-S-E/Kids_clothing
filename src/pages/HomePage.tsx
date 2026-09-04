@@ -4,8 +4,12 @@ import { Sparkles, ShieldCheck, Truck, MessageCircle } from "lucide-react";
 import { ProductCard } from "../components/ProductCard";
 import { useProductStore } from "../store/productStore";
 
+const FALLBACK_HERO = "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=1200&q=80";
+
 export function HomePage() {
-  const products = useProductStore((s) => s.products).slice(0, 4);
+  const allProducts = useProductStore((s) => s.products);
+  const heroProduct = allProducts[0];
+  const products = allProducts.slice(0, 4);
 
   return (
     <>
@@ -68,8 +72,8 @@ export function HomePage() {
           className="relative h-[480px] w-full overflow-hidden rounded-[2.5rem] border border-[var(--line)] shadow-2xl lg:h-[580px]"
         >
           <img
-            src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=1200&q=80"
-            alt="Kandamma Kids ethnic festive clothing"
+            src={heroProduct?.image || FALLBACK_HERO}
+            alt={heroProduct ? heroProduct.name : "Kandamma Kids ethnic festive clothing"}
             className="h-full w-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -105,7 +109,7 @@ export function HomePage() {
             View all pieces →
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-6 sm:grid-cols-2 ${products.length >= 3 ? "lg:grid-cols-4" : products.length === 2 ? "lg:grid-cols-2 max-w-2xl" : "lg:grid-cols-1 max-w-md"}`}>
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
