@@ -8,12 +8,12 @@ export function CartFloat({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold text-ink shadow-[0_0_32px_rgba(212,175,55,0.35)] transition hover:scale-110"
+      className="fixed bottom-20 right-6 z-[var(--z-floating)] flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-primary)] text-[var(--text-primary)] shadow-lg transition hover:scale-105 hover:shadow-xl"
       aria-label="Open cart"
     >
-      <ShoppingBag className="h-6 w-6" />
+      <ShoppingBag className="h-5 w-5" />
       {totalItems > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">
+        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">
           {totalItems}
         </span>
       )}

@@ -220,38 +220,38 @@ export function AdminPage() {
     <section className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-gold">Protected</p>
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--accent-primary)]">Protected</p>
           <h1 className="font-display text-5xl">Inventory Dashboard</h1>
         </div>
         <button
           type="button"
           onClick={logout}
-          className="rounded-full border border-[var(--line)] px-4 py-2 text-sm hover:bg-white/5 transition-colors cursor-pointer"
+          className="rounded-full border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5 transition-colors cursor-pointer"
         >
           Sign out
         </button>
       </div>
 
       {/* Brand Logo Upload Box */}
-      <div className="glass mb-8 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-[var(--line)] p-5">
+      <div className="glass mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--border)] p-5">
         <div className="flex items-center gap-4">
           {settings.logoUrl ? (
             <img
               src={settings.logoUrl}
               alt="Logo"
-              className="h-16 w-16 rounded-full object-cover ring-2 ring-gold/70 shadow"
+              className="h-16 w-16 rounded-full object-cover ring-2 ring-[var(--accent-primary)]/70 shadow"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold text-lg font-bold text-ink">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-primary)] text-lg font-bold text-[var(--text-primary)]">
               KK
             </div>
           )}
           <div>
             <p className="font-medium">Store Logo (Database)</p>
-            <p className="text-xs text-[var(--muted)]">Upload your round Krishna logo here</p>
+            <p className="text-xs text-[var(--text-secondary)]">Upload your round Krishna logo here</p>
           </div>
         </div>
-        <label className="cursor-pointer rounded-full bg-gold px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-ink hover:bg-yellow-400 transition-colors">
+        <label className="cursor-pointer rounded-full bg-[var(--accent-primary)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--color-gold-light)] transition-colors">
           {logoBusy ? "Saving..." : "Upload Logo"}
           <input
             type="file"
@@ -265,13 +265,13 @@ export function AdminPage() {
 
       <div className="grid gap-8 lg:grid-cols-2 items-start">
         {/* Form Panel */}
-        <div className="glass rounded-[2rem] p-8 shadow-xl">
+        <div className="glass rounded-xl p-8 shadow-xl">
           <h2 className="font-display text-3xl mb-6">
             {editingId ? "Edit piece" : "Publish a piece"}
           </h2>
 
           {validationErrors.length > 0 && (
-            <div className="mb-4 rounded-2xl border border-red-400/40 bg-red-500/10 p-4">
+            <div className="mb-4 rounded-xl border border-red-400/40 bg-red-500/10 p-4">
               <p className="text-sm font-semibold text-red-400 mb-1">Please fix the following:</p>
               <ul className="list-disc list-inside text-xs text-red-300 space-y-0.5">
                 {validationErrors.map((err, i) => (
@@ -289,7 +289,7 @@ export function AdminPage() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. Peacock Silk Kurta"
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
               />
             </label>
 
@@ -300,7 +300,7 @@ export function AdminPage() {
                   value={form.designNo || ""}
                   onChange={(e) => setForm({ ...form, designNo: e.target.value.toUpperCase() })}
                   placeholder="e.g. KK-101"
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none uppercase"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none uppercase"
                 />
               </label>
 
@@ -310,24 +310,24 @@ export function AdminPage() {
                   value={form.color || ""}
                   onChange={(e) => setForm({ ...form, color: e.target.value })}
                   placeholder="e.g. Yellow, Pink, Blue"
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
                 />
               </label>
             </div>
 
             {/* Individual Color Photo Uploads */}
             {parsedColors.length > 0 && (
-              <div className="rounded-2xl border border-[var(--line)] bg-white/5 p-4 space-y-3">
-                <p className="text-xs uppercase font-bold tracking-wider text-gold">
+              <div className="rounded-xl border border-[var(--border)] bg-white/5 p-4 space-y-3">
+                <p className="text-xs uppercase font-bold tracking-wider text-[var(--accent-primary)]">
                   Photos for Each Color (Optional):
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {parsedColors.map((clr) => (
-                    <div key={clr} className="rounded-xl border border-[var(--line)] p-2.5 bg-black/20 flex flex-col gap-2">
+                    <div key={clr} className="rounded-xl border border-[var(--border)] p-2.5 bg-black/20 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-white">{clr}</span>
                         {form.colorImages?.[clr] && (
-                          <span className="text-[10px] text-emerald-400 font-bold">Uploaded ✓</span>
+                          <span className="text-[10px] text-[var(--success)] font-bold">Uploaded ✓</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -335,10 +335,10 @@ export function AdminPage() {
                           <img
                             src={form.colorImages[clr]}
                             alt={clr}
-                            className="h-10 w-10 rounded-lg object-cover border border-gold"
+                            className="h-10 w-10 rounded-lg object-cover border border-[var(--accent-primary)]"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center text-[10px] text-[var(--muted)]">
+                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center text-[10px] text-[var(--text-secondary)]">
                             None
                           </div>
                         )}
@@ -346,7 +346,7 @@ export function AdminPage() {
                           type="file"
                           accept="image/*"
                           onChange={(e) => onColorFile(clr, e.target.files?.[0])}
-                          className="w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-gold file:px-2.5 file:py-1 file:text-[10px] file:font-semibold file:text-ink cursor-pointer"
+                          className="w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-2.5 file:py-1 file:text-[10px] file:font-semibold file:text-[var(--text-primary)] cursor-pointer"
                         />
                       </div>
                     </div>
@@ -362,7 +362,7 @@ export function AdminPage() {
                   value={form.style || ""}
                   onChange={(e) => setForm({ ...form, style: e.target.value })}
                   placeholder="e.g. Kurta Pajama, Frock, Gown"
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
                 />
               </label>
 
@@ -372,7 +372,7 @@ export function AdminPage() {
                   value={form.occasion || ""}
                   onChange={(e) => setForm({ ...form, occasion: e.target.value })}
                   placeholder="e.g. Weddings, Parties & Festivals"
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
                 />
               </label>
             </div>
@@ -383,7 +383,7 @@ export function AdminPage() {
                 value={form.image.startsWith("data:") ? "" : form.image}
                 onChange={(e) => setForm({ ...form, image: e.target.value })}
                 placeholder="https://"
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
               />
             </label>
 
@@ -393,12 +393,12 @@ export function AdminPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => onMainFile(e.target.files?.[0])}
-                className="mt-1 w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-gold file:px-4 file:py-2 file:text-sm file:font-semibold file:text-ink cursor-pointer"
+                className="mt-1 w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--text-primary)] cursor-pointer"
               />
             </label>
 
             {form.image && (
-              <img src={form.image} alt="" className="h-28 w-28 rounded-2xl object-cover border border-[var(--line)]" />
+              <img src={form.image} alt="" className="h-28 w-28 rounded-xl object-cover border border-[var(--border)]" />
             )}
 
             <label className="block text-sm">
@@ -409,7 +409,7 @@ export function AdminPage() {
                 min={1}
                 value={form.price === 0 ? "" : form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : Number(e.target.value) })}
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
               />
             </label>
 
@@ -419,7 +419,7 @@ export function AdminPage() {
                 <select
                   value={form.gender}
                   onChange={(e) => setForm({ ...form, gender: e.target.value as Gender })}
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
                 >
                   {genders.map((g) => (
                     <option key={g} value={g} className="bg-zinc-900 text-white">
@@ -435,7 +435,7 @@ export function AdminPage() {
                   required
                   value={form.ageRange}
                   onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
-                  className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
                 >
                   <option value="" className="bg-zinc-900 text-white">Select age range</option>
                   {defaultAgeRanges.map((a) => (
@@ -454,7 +454,7 @@ export function AdminPage() {
                 value={rawSizes}
                 onChange={(e) => setRawSizes(e.target.value.toUpperCase())}
                 placeholder="2Y, 3Y, 4Y, 5Y"
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none uppercase"
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none uppercase"
               />
             </label>
 
@@ -465,7 +465,7 @@ export function AdminPage() {
                 rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
               />
             </label>
 
@@ -475,14 +475,14 @@ export function AdminPage() {
                   type="checkbox"
                   checked={form.stockStatus ?? true}
                   onChange={(e) => setForm({ ...form, stockStatus: e.target.checked })}
-                  className="h-5 w-5 accent-gold cursor-pointer"
+                  className="h-5 w-5 accent-[var(--accent-primary)] cursor-pointer"
                 />
                 <span>In Stock</span>
               </label>
 
               {(form.stockStatus ?? true) && (
                 <label className="flex items-center gap-2 text-sm">
-                  <span className="text-[var(--muted)]">Stock Quantity:</span>
+                  <span className="text-[var(--text-secondary)]">Stock Quantity:</span>
                   <input
                     type="number"
                     min={0}
@@ -493,7 +493,7 @@ export function AdminPage() {
                         stockQuantity: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
                       })
                     }
-                    className="w-24 rounded-xl border border-[var(--line)] bg-transparent px-3 py-1.5 focus:border-gold outline-none"
+                    className="w-24 rounded-xl border border-[var(--border)] bg-transparent px-3 py-1.5 focus:border-[var(--accent-primary)] outline-none"
                   />
                 </label>
               )}
@@ -505,7 +505,7 @@ export function AdminPage() {
                   type="button"
                   onClick={onCancelEdit}
                   disabled={busy}
-                  className="flex-1 rounded-full border border-[var(--line)] py-3 text-sm font-semibold uppercase tracking-widest hover:border-gold cursor-pointer"
+                  className="flex-1 rounded-full border border-[var(--border)] py-3 text-sm font-semibold uppercase tracking-widest hover:border-[var(--accent-primary)] cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -513,26 +513,26 @@ export function AdminPage() {
               <button
                 type="submit"
                 disabled={busy || !form.image}
-                className="flex-1 rounded-full bg-gold py-3 text-sm font-semibold uppercase tracking-widest text-ink disabled:opacity-50 hover:bg-yellow-400 cursor-pointer"
+                className="flex-1 rounded-full bg-[var(--accent-primary)] py-3 text-sm font-semibold uppercase tracking-widest text-[var(--text-primary)] disabled:opacity-50 hover:bg-[var(--color-gold-light)] cursor-pointer"
               >
                 {busy ? "Saving..." : editingId ? "Update piece" : "Publish piece"}
               </button>
             </div>
-            {msg && <p className="text-sm text-green-400 mt-2">{msg}</p>}
+            {msg && <p className="text-sm text-[var(--success)] mt-2">{msg}</p>}
           </form>
         </div>
 
         {/* List Panel - Sticky with independent scrolling */}
-        <div className="glass rounded-[2rem] p-8 shadow-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)]">
+        <div className="glass rounded-xl p-8 shadow-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)]">
           <h2 className="font-display text-3xl mb-6 shrink-0">Live Pieces ({products.length})</h2>
           <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
             {products.map((p) => (
-              <div key={p.id} className="glass flex items-center gap-4 rounded-3xl p-4 border border-[var(--line)]">
-                <img src={p.image} alt="" className="h-16 w-16 rounded-2xl object-cover" />
+              <div key={p.id} className="glass flex items-center gap-4 rounded-xl p-4 border border-[var(--border)]">
+                <img src={p.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p.name}</p>
-                  <p className="text-sm text-gold">{formatINR(p.price)}</p>
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="text-sm text-[var(--accent-primary)]">{formatINR(p.price)}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {p.ageRange} · Sizes: {(p.sizes || []).join(", ")}
                     {p.designNo && ` · #${p.designNo}`}
                     {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
@@ -542,14 +542,14 @@ export function AdminPage() {
                   <button
                     type="button"
                     onClick={() => onEdit(p)}
-                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs hover:border-gold cursor-pointer"
+                    className="rounded-full border border-[var(--border)] px-3 py-1 text-xs hover:border-[var(--accent-primary)] cursor-pointer"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeletingProduct(p)}
-                    className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                   >
                     Remove
                   </button>
@@ -563,18 +563,18 @@ export function AdminPage() {
       {/* Confirmation Modal */}
       {deletingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="glass max-w-md w-full rounded-[2rem] border border-[var(--line)] p-6 shadow-2xl space-y-4">
+          <div className="glass max-w-md w-full rounded-xl border border-[var(--border)] p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 font-bold">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/20 text-red-400 font-bold">
                 ✕
               </div>
               <div>
                 <h3 className="font-display text-xl font-semibold">Delete Product?</h3>
-                <p className="text-xs text-[var(--muted)]">This cannot be recovered once removed.</p>
+                <p className="text-xs text-[var(--text-secondary)]">This cannot be recovered once removed.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white/5 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white/5 p-3">
               <img
                 src={deletingProduct.image}
                 alt={deletingProduct.name}
@@ -582,7 +582,7 @@ export function AdminPage() {
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{deletingProduct.name}</p>
-                <p className="text-xs text-gold">{formatINR(deletingProduct.price)}</p>
+                <p className="text-xs text-[var(--accent-primary)]">{formatINR(deletingProduct.price)}</p>
               </div>
             </div>
 
@@ -591,7 +591,7 @@ export function AdminPage() {
                 type="button"
                 disabled={deleteBusy}
                 onClick={() => setDeletingProduct(null)}
-                className="flex-1 rounded-full border border-[var(--line)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-gold transition-colors cursor-pointer"
+                className="flex-1 rounded-full border border-[var(--border)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
               >
                 Cancel
               </button>

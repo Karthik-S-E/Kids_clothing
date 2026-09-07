@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ProductCard } from "../components/ProductCard";
 import { ProductFilters, useProductFilters } from "../components/ProductFilters";
+import { ScrollReveal, StaggerReveal } from "../components/ScrollReveal";
 import { useProductStore } from "../store/productStore";
 
 export function ShopPage() {
@@ -30,49 +31,42 @@ export function ShopPage() {
   }, [filtered, query]);
 
   return (
-    <motion.section 
-      className="mx-auto max-w-6xl px-6 py-10"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-    >
-      <motion.div 
-        className="mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <p className="text-[11px] uppercase tracking-[0.32em] text-gold">Catalogue</p>
-        <h1 className="font-display text-5xl">
-          {query ? `Search: "${query}"` : "Shop the closet"}
-        </h1>
-        <p className="mt-2 text-[var(--muted)]">
-          {query
-            ? `Showing results matching "${query}". Filter by gender and age below.`
-            : "Filter by gender and age. Every price is in Indian Rupees (₹)."}
-        </p>
-      </motion.div>
+    <section className="mx-auto max-w-6xl px-6 py-10">
+      <ScrollReveal delay={0} duration={0.6}>
+        <div className="mb-8">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--accent-primary)]">Catalogue</p>
+          <h1 className="font-display text-5xl">
+            {query ? `Search: "${query}"` : "Shop the closet"}
+          </h1>
+          <p className="mt-2 text-[var(--text-secondary)]">
+            {query
+              ? `Showing results matching "${query}". Filter by gender and age below.`
+              : "Filter by gender and age. Every price is in Indian Rupees (₹)."}
+          </p>
+        </div>
+      </ScrollReveal>
+      
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-        <ProductFilters products={products} filters={filters} onChange={setFilters} />
+        <ScrollReveal delay={0.1} duration={0.6}>
+          <ProductFilters products={products} filters={filters} onChange={setFilters} />
+        </ScrollReveal>
+        
         <div>
           {searchFiltered.length === 0 ? (
-            <p className="glass rounded-3xl p-10 text-center text-[var(--muted)]">
-              {query ? `No pieces found matching "${query}".` : "No pieces in this filter yet."}
-            </p>
+            <ScrollReveal delay={0.2} duration={0.6}>
+              <p className="glass rounded-xl p-10 text-center text-[var(--text-secondary)]">
+                {query ? `No pieces found matching "${query}".` : "No pieces in this filter yet."}
+              </p>
+            </ScrollReveal>
           ) : (
-            <motion.div 
-              className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
+            <StaggerReveal staggerDelay={0.1} className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {searchFiltered.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
-            </motion.div>
+            </StaggerReveal>
           )}
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }

@@ -23,21 +23,21 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[150] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm"
           />
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 z-[160] h-full w-full max-w-md bg-[var(--bg)] shadow-2xl"
+            className="fixed right-0 top-0 z-[var(--z-navigation)] h-full w-full max-w-md bg-[var(--background)] shadow-2xl"
           >
             <div className="flex h-full flex-col">
-              <div className="flex items-center justify-between border-b border-[var(--line)] p-6">
+              <div className="flex items-center justify-between border-b border-[var(--border)] p-6">
                 <h2 className="font-display text-3xl">Your Bag</h2>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 hover:bg-[var(--line)] transition-colors"
+                  className="rounded-full p-2 hover:bg-[var(--border)] transition-colors"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -46,8 +46,8 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <div className="flex-1 overflow-y-auto p-6">
                 {items.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
-                    <p className="text-lg text-[var(--muted)]">Your bag is empty</p>
-                    <p className="text-sm text-[var(--muted)] mt-2">
+                    <p className="text-lg text-[var(--text-secondary)]">Your bag is empty</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-2">
                       Add some beautiful pieces for your little one!
                     </p>
                   </div>
@@ -56,7 +56,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     {items.map((item) => (
                       <div
                         key={`${item.product.id}-${item.size}`}
-                        className="flex gap-4 border-b border-[var(--line)] pb-4"
+                        className="flex gap-4 border-b border-[var(--border)] pb-4"
                       >
                         <img
                           src={item.product.image}
@@ -65,8 +65,8 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                         />
                         <div className="flex-1">
                           <h3 className="font-medium">{item.product.name}</h3>
-                          <p className="text-sm text-[var(--muted)]">Size: {item.size}</p>
-                          <p className="text-sm font-semibold text-gold mt-1">
+                          <p className="text-sm text-[var(--text-secondary)]">Size: {item.size}</p>
+                          <p className="text-sm font-semibold text-[var(--accent-primary)] mt-1">
                             {formatINR(item.product.price)}
                           </p>
                           <div className="flex items-center gap-3 mt-2">
@@ -74,7 +74,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity - 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:border-gold transition-colors"
+                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors"
                             >
                               -
                             </button>
@@ -83,7 +83,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity + 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:border-gold transition-colors"
+                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors"
                             >
                               +
                             </button>
@@ -102,10 +102,10 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               </div>
 
               {items.length > 0 && (
-                <div className="border-t border-[var(--line)] p-6 space-y-4">
+                <div className="border-t border-[var(--border)] p-6 space-y-4">
                   <div className="flex justify-between text-lg">
                     <span className="font-medium">Total</span>
-                    <span className="font-semibold text-gold">{formatINR(getTotalPrice())}</span>
+                    <span className="font-semibold text-[var(--accent-primary)]">{formatINR(getTotalPrice())}</span>
                   </div>
                   <button
                     onClick={handleCheckout}
@@ -115,7 +115,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   </button>
                   <button
                     onClick={clearCart}
-                    className="w-full rounded-full border border-[var(--line)] py-3 text-sm font-medium uppercase tracking-widest hover:border-red-400 hover:text-red-400 transition-colors"
+                    className="w-full rounded-full border border-[var(--border)] py-3 text-sm font-medium uppercase tracking-widest hover:border-red-400 hover:text-red-400 transition-colors"
                   >
                     Clear Bag
                   </button>

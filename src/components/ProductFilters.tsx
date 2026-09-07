@@ -41,16 +41,16 @@ export function ProductFilters({
   const hasActiveFilters = filters.gender !== "All" || filters.age !== "All";
 
   return (
-    <aside className="glass h-fit rounded-2xl p-4 md:sticky md:top-24 border border-[var(--line)] space-y-4">
-      <div className="flex items-center justify-between border-b border-[var(--line)]/60 pb-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+    <aside className="glass h-fit rounded-xl p-4 md:sticky md:top-24 border border-[var(--border)] space-y-4">
+      <div className="flex items-center justify-between border-b border-[var(--border)]/60 pb-2.5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
           Filter Pieces
         </span>
         {hasActiveFilters && (
           <button
             type="button"
             onClick={() => onChange({ gender: "All", age: "All" })}
-            className="text-[10px] text-gold hover:underline cursor-pointer"
+            className="text-[10px] text-[var(--accent-primary)] hover:underline cursor-pointer"
           >
             Reset
           </button>
@@ -59,7 +59,7 @@ export function ProductFilters({
 
       {/* Gender chips */}
       <div>
-        <span className="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1.5 font-medium">
+        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] block mb-1.5 font-medium">
           Gender
         </span>
         <div className="flex flex-wrap gap-1.5">
@@ -72,8 +72,8 @@ export function ProductFilters({
                 onClick={() => onChange({ ...filters, gender: g })}
                 className={`rounded-full px-3 py-1 text-xs transition-all ${
                   active
-                    ? "bg-gold font-bold text-ink shadow-sm"
-                    : "border border-[var(--line)] text-[var(--text)] hover:border-gold/60"
+                    ? "bg-[var(--accent-primary)] font-bold text-[var(--text-primary)] shadow-sm"
+                    : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
                 }`}
               >
                 {g}
@@ -86,7 +86,7 @@ export function ProductFilters({
 
       {/* Age / Size Range chips */}
       <div>
-        <span className="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1.5 font-medium">
+        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] block mb-1.5 font-medium">
           Age / Size
         </span>
         <div className="flex flex-wrap gap-1.5">
@@ -95,8 +95,8 @@ export function ProductFilters({
             onClick={() => onChange({ ...filters, age: "All" })}
             className={`rounded-full px-3 py-1 text-xs transition-all ${
               filters.age === "All"
-                ? "bg-[var(--accent)] font-bold text-white shadow-sm"
-                : "border border-[var(--line)] text-[var(--text)] hover:border-gold/60"
+                ? "bg-[var(--accent-secondary)] font-bold text-white shadow-sm"
+                : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
             }`}
           >
             All
@@ -111,8 +111,8 @@ export function ProductFilters({
                 onClick={() => onChange({ ...filters, age: a })}
                 className={`rounded-full px-3 py-1 text-xs transition-all ${
                   active
-                    ? "bg-[var(--accent)] font-bold text-white shadow-sm"
-                    : "border border-[var(--line)] text-[var(--text)] hover:border-gold/60"
+                    ? "bg-[var(--accent-secondary)] font-bold text-white shadow-sm"
+                    : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
                 }`}
               >
                 {a}

@@ -54,7 +54,7 @@ export function NavItem({ to, children }: { to: string; children: ReactNode }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `text-sm tracking-wide ${isActive ? "text-gold" : "text-[var(--muted)] hover:text-[var(--text)]"}`
+        `text-sm tracking-wide transition-colors ${isActive ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`
       }
     >
       {children}

@@ -20,15 +20,15 @@ export function ProductCard({ product }: { product: Product }) {
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="group relative flex flex-col rounded-[2rem] border border-[var(--line)] bg-[var(--bg-elev)] shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:border-white/25"
+      className="group relative flex flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg hover:border-[var(--accent-primary)]/30"
     >
       {/* Image container */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-[2rem] bg-black/5 dark:bg-black/20">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-xl bg-black/5 dark:bg-black/20">
         <Link to={`/shop/${product.id}`} className="block h-full w-full">
           <img
             src={product.image}
             alt={product.name}
-            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+            className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 ${
               !inStock ? "grayscale opacity-50" : ""
             }`}
           />
@@ -40,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
             {product.gender}
           </span>
-          <span className="rounded-full bg-gold/90 px-2.5 py-1 text-[10px] font-bold text-ink backdrop-blur-md">
+          <span className="rounded-full bg-[var(--accent-primary)]/90 px-2.5 py-1 text-[10px] font-bold text-[var(--text-primary)] backdrop-blur-md">
             {product.ageRange}
           </span>
         </div>
@@ -50,17 +50,17 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="flex flex-1 flex-col justify-between p-5">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <Link to={`/shop/${product.id}`} className="hover:text-gold transition-colors">
+            <Link to={`/shop/${product.id}`} className="hover:text-[var(--accent-primary)] transition-colors">
               <h3 className="font-display text-2xl font-semibold leading-snug tracking-tight">
                 {product.name}
               </h3>
             </Link>
-            <span className="shrink-0 text-lg font-bold text-gold">
+            <span className="shrink-0 text-lg font-bold text-[var(--accent-primary)]">
               {formatINR(product.price)}
             </span>
           </div>
 
-          <p className="mt-2 line-clamp-2 text-xs text-[var(--muted)] leading-relaxed">
+          <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)] leading-relaxed">
             {product.description}
           </p>
 
@@ -76,12 +76,12 @@ export function ProductCard({ product }: { product: Product }) {
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                   quantity <= 3
                     ? "bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold"
-                    : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"
+                    : "bg-[var(--success)]/15 border border-[var(--success)]/30 text-[var(--success)]"
                 }`}
               >
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
-                    quantity <= 3 ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
+                    quantity <= 3 ? "bg-amber-400 animate-pulse" : "bg-[var(--success)]"
                   }`}
                 />
                 {quantity <= 3 ? `Only ${quantity} left in stock!` : `${quantity} in stock`}
@@ -93,7 +93,7 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Action area */}
         <div className="mt-5 space-y-3">
           {!inStock ? (
-            <div className="w-full rounded-full border border-zinc-500/20 bg-zinc-500/10 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            <div className="w-full rounded-full border border-zinc-500/20 bg-zinc-500/10 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               Currently Unavailable
             </div>
           ) : (
@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
                   <select
                     value={selectedSize}
                     onChange={(e) => setSelectedSize(e.target.value)}
-                    className="w-full appearance-none rounded-full border border-[var(--line)] bg-[var(--bg)] px-3.5 py-2.5 text-xs font-medium outline-none transition-colors hover:border-gold focus:border-gold cursor-pointer"
+                    className="w-full appearance-none rounded-full border border-[var(--border)] bg-[var(--background)] px-3.5 py-2.5 text-xs font-medium outline-none transition-colors hover:border-[var(--accent-primary)] focus:border-[var(--accent-primary)] cursor-pointer"
                   >
                     {product.sizes.map((sz) => (
                       <option key={sz} value={sz} className="bg-zinc-900 text-white">
@@ -112,7 +112,7 @@ export function ProductCard({ product }: { product: Product }) {
                       </option>
                     ))}
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--muted)]">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-secondary)]">
                     ▼
                   </span>
                 </div>
@@ -120,7 +120,7 @@ export function ProductCard({ product }: { product: Product }) {
                 <button
                   type="button"
                   onClick={() => addItem(product, selectedSize)}
-                  className="flex flex-[1.4] items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-ink shadow-sm transition-all duration-200 hover:bg-yellow-400 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(212,175,55,0.65)] active:scale-95 cursor-pointer"
+                  className="flex flex-[1.4] items-center justify-center gap-1.5 rounded-full bg-[var(--accent-primary)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-sm transition-all duration-200 hover:bg-[var(--color-gold-light)] hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(212,175,55,0.65)] active:scale-95 cursor-pointer"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
                   <span>Add to Bag</span>
@@ -131,7 +131,7 @@ export function ProductCard({ product }: { product: Product }) {
               <div className="grid grid-cols-2 gap-2">
                 <Link
                   to={`/shop/${product.id}`}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-[var(--line)] bg-transparent py-2 text-center text-xs font-semibold transition-all duration-200 hover:border-gold hover:text-gold active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-[var(--border)] bg-transparent py-2 text-center text-xs font-semibold transition-all duration-200 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] active:scale-95"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   <span>View</span>
