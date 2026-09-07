@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ProductCard } from "../components/ProductCard";
 import { ProductFilters, useProductFilters } from "../components/ProductFilters";
 import { ScrollReveal, StaggerReveal } from "../components/ScrollReveal";

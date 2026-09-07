@@ -1,7 +1,7 @@
 import { social } from "../config";
 import { whatsappChatUrl } from "../lib/whatsapp";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "../components/SocialLinks";
-import { ScrollReveal, StaggerReveal } from "../components/ScrollReveal";
+import { ScrollReveal } from "../components/ScrollReveal";
 
 const tiles = [
   {
@@ -96,7 +96,7 @@ export function ContactPage() {
               rows={4}
               className="w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--accent-primary)] transition-colors"
             />
-            <button type="submit" className="rounded-full bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--color-gold-light)] transition-colors">
+            <button type="submit" className="rounded-full bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--color-gold)]">
               Send via WhatsApp
             </button>
           </form>
