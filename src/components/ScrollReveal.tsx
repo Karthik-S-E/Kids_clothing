@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, UseInViewOptions } from "framer-motion";
 
@@ -41,7 +42,7 @@ export function ScrollReveal({
   className = "",
   viewport = { once: true, margin: "-100px" },
 }: ScrollRevealProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const isInView = useInView(ref, viewport);
   const [hasAnimated, setHasAnimated] = useState(false);
 
@@ -62,7 +63,8 @@ export function ScrollReveal({
       transition={{
         duration,
         delay,
-        ease: [0.22, 1, 0.36, 1],
+        // use a named easing to satisfy the framer-motion TypeScript types
+        ease: "easeOut",
       }}
       className={className}
     >
@@ -82,7 +84,7 @@ export function StaggerReveal({
   staggerDelay = 0.1,
   className = "",
 }: StaggerRevealProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [hasAnimated, setHasAnimated] = useState(false);
 
@@ -109,10 +111,12 @@ export function StaggerReveal({
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.22, 1, 0.36, 1],
+        ease: "easeOut",
       },
     },
   };
+
+  const childrenArray = React.Children.toArray(children);
 
   return (
     <motion.div
@@ -122,15 +126,11 @@ export function StaggerReveal({
       variants={containerVariants}
       className={className}
     >
-      {Array.isArray(children) ? (
-        children.map((child, index) => (
-          <motion.div key={index} variants={itemVariants}>
-            {child}
-          </motion.div>
-        ))
-      ) : (
-        <motion.div variants={itemVariants}>{children}</motion.div>
-      )}
+      {childrenArray.map((child, index) => (
+        <motion.div key={index} variants={itemVariants}>
+          {child}
+        </motion.div>
+      ))}
     </motion.div>
   );
 }
