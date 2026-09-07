@@ -59,12 +59,13 @@ export function ScrollReveal({
       ref={ref}
       initial="hidden"
       animate={hasAnimated ? "visible" : "hidden"}
-      variants={selectedVariant}
+      // cast variants to any to satisfy differing framer-motion type shapes across versions
+      variants={selectedVariant as any}
       transition={{
         duration,
         delay,
-        // use a named easing to satisfy the framer-motion TypeScript types
-        ease: "easeOut",
+        // keep custom cubic bezier but cast to any to avoid TS mismatch
+        ease: [0.22, 1, 0.36, 1] as any,
       }}
       className={className}
     >
@@ -111,7 +112,8 @@ export function StaggerReveal({
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut",
+        // keep custom cubic bezier but cast to any
+        ease: [0.22, 1, 0.36, 1] as any,
       },
     },
   };
@@ -123,11 +125,11 @@ export function StaggerReveal({
       ref={ref}
       initial="hidden"
       animate={hasAnimated ? "visible" : "hidden"}
-      variants={containerVariants}
+      variants={containerVariants as any}
       className={className}
     >
       {childrenArray.map((child, index) => (
-        <motion.div key={index} variants={itemVariants}>
+        <motion.div key={index} variants={itemVariants as any}>
           {child}
         </motion.div>
       ))}
