@@ -1,29 +1,27 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag, Eye } from "lucide-react";
+import { MessageCircle, ArrowRight } from "lucide-react";
 import type { Product } from "../config";
 import { formatINR } from "../lib/formatINR";
 import { whatsappOrderUrl } from "../lib/whatsapp";
-import { useCartStore } from "../store/cartStore";
 
 export function ProductCard({ product }: { product: Product }) {
-  const [selectedSize, setSelectedSize] = useState(
-    product.sizes[Math.floor(product.sizes.length / 2)] ?? product.sizes[0] ?? "Free"
-  );
-  const addItem = useCartStore((s) => s.addItem);
   const inStock = product.stockStatus ?? true;
-  const quantity = product.stockQuantity;
+
+  const orderUrl = whatsappOrderUrl({
+    productName: product.name,
+    size: product.sizes[0] ?? "Standard",
+    price: product.price,
+  });
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="group relative flex flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg hover:border-[var(--accent-primary)]/30"
+      className="group relative flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-2xl hover:border-[var(--accent-primary)]/40 overflow-hidden"
     >
-      {/* Image container */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-xl bg-black/5 dark:bg-black/20">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-black/5 dark:bg-black/20">
         <Link to={`/shop/${product.id}`} className="block h-full w-full">
           <img
             src={product.image}
@@ -35,23 +33,21 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
-        {/* Badges on image */}
-        <div className="absolute left-3.5 top-3.5 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-black/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white backdrop-blur-md">
             {product.gender}
           </span>
-          <span className="rounded-full bg-[var(--accent-primary)]/90 px-2.5 py-1 text-[10px] font-bold text-[var(--text-primary)] backdrop-blur-md">
+          <span className="rounded-full bg-[var(--accent-primary)] px-3 py-1 text-[10px] font-bold text-[var(--text-primary)] backdrop-blur-md">
             {product.ageRange}
           </span>
         </div>
       </div>
 
-      {/* Details body */}
-      <div className="flex flex-1 flex-col justify-between p-5">
+      <div className="flex flex-1 flex-col justify-between p-6">
         <div>
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-3">
             <Link to={`/shop/${product.id}`} className="hover:text-[var(--accent-primary)] transition-colors">
-              <h3 className="font-display text-2xl font-semibold leading-snug tracking-tight">
+              <h3 className="font-display text-xl font-normal leading-snug tracking-tight text-[var(--text-primary)]">
                 {product.name}
               </h3>
             </Link>
@@ -60,120 +56,35 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
 
-          <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)] leading-relaxed">
+          <p className="mt-2.5 line-clamp-2 text-xs text-[var(--text-secondary)] font-light leading-relaxed">
             {product.description}
           </p>
 
-          {/* Stock status indicator */}
-          <div className="mt-3">
-            {!inStock ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                Sold Out
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {product.sizes.map((s) => (
+              <span key={s} className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-0.5 text-[10px] uppercase font-mono text-[var(--text-secondary)]">
+                {s}
               </span>
-            ) : quantity !== undefined && quantity > 0 ? (
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  quantity <= 3
-                    ? "bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold"
-                    : "bg-[var(--success)]/15 border border-[var(--success)]/30 text-[var(--success)]"
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    quantity <= 3 ? "bg-amber-400 animate-pulse" : "bg-[var(--success)]"
-                  }`}
-                />
-                {quantity <= 3 ? `Only ${quantity} left in stock!` : `${quantity} in stock`}
-              </span>
-            ) : null}
+            ))}
           </div>
         </div>
 
-        {/* Action area */}
-        <div className="mt-5 space-y-3">
-          {!inStock ? (
-            <div className="w-full rounded-full border border-zinc-500/20 bg-zinc-500/10 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Currently Unavailable
-            </div>
-          ) : (
-            <>
-              {/* Size Selection & Add To Bag */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <select
-                    value={selectedSize}
-                    onChange={(e) => setSelectedSize(e.target.value)}
-                    className="w-full appearance-none rounded-full border border-[var(--border)] bg-[var(--background)] px-3.5 py-2.5 text-xs font-medium outline-none transition-colors hover:border-[var(--accent-primary)] focus:border-[var(--accent-primary)] cursor-pointer"
-                  >
-                    {product.sizes.map((sz) => (
-                      <option key={sz} value={sz} className="bg-zinc-900 text-white">
-                        Size: {sz}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-secondary)]">
-                    ▼
-                  </span>
-                </div>
+        <div className="mt-6 pt-4 border-t border-[var(--border)] flex items-center justify-between gap-3">
+          <Link
+            to={`/shop/${product.id}`}
+            className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors inline-flex items-center gap-1"
+          >
+            Details <ArrowRight className="h-3 w-3" />
+          </Link>
 
-                <button
-                  type="button"
-                  onClick={() => addItem(product, selectedSize)}
-                  className="flex flex-[1.4] items-center justify-center gap-1.5 rounded-full bg-[var(--accent-primary)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-sm transition-all duration-200 hover:bg-[var(--color-gold-light)] hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(212,175,55,0.65)] active:scale-95 cursor-pointer"
-                >
-                  <ShoppingBag className="h-3.5 w-3.5" />
-                  <span>Add to Bag</span>
-                </button>
-              </div>
-
-              {/* View & WhatsApp buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  to={`/shop/${product.id}`}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-[var(--border)] bg-transparent py-2 text-center text-xs font-semibold transition-all duration-200 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] active:scale-95"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  <span>View</span>
-                </Link>
-
-                <a
-                  href={whatsappOrderUrl({ productName: product.name, size: selectedSize, price: product.price })}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-center text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#20bd5a] hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(37,211,102,0.45)] active:scale-95"
-                >
-                  WhatsApp
-                </a>
-              </div>
-
-              {/* Marketplace Links */}
-              {(product.meeshoUrl || product.flipkartUrl) && (
-                <div className="flex gap-2 pt-1">
-                  {product.meeshoUrl && (
-                    <a
-                      href={product.meeshoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 rounded-full bg-[#f43397] py-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 active:scale-95"
-                    >
-                      Meesho
-                    </a>
-                  )}
-                  {product.flipkartUrl && (
-                    <a
-                      href={product.flipkartUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 rounded-full bg-[#2874f0] py-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 active:scale-95"
-                    >
-                      Flipkart
-                    </a>
-                  )}
-                </div>
-              )}
-            </>
-          )}
+          <a
+            href={orderUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#20ba59] transition-all"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> Order via WhatsApp
+          </a>
         </div>
       </div>
     </motion.article>

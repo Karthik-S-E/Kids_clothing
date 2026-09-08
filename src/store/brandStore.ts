@@ -16,8 +16,8 @@ interface BrandState {
 
 export const useBrandStore = create<BrandState>((set, get) => ({
   settings: {
-    name: "Kandamma Kids",
-    tagline: "Cute styles, happy smiles",
+    name: "Kandamma",
+    tagline: "Luxury Ethnic & Festive Children's Atelier",
     logoUrl: "",
   },
   fetchSettings: async () => {

@@ -1,8 +1,8 @@
 export const brand = {
-  name: "Kandamma Kids",
-  tagline: "Little gods. Big vibes.",
+  name: "Kandamma",
+  tagline: "Luxury Ethnic & Festive Children's Atelier",
   city: "India",
-  whatsappNumber: "919901200520",
+  whatsappNumber: "919912345678",
 } as const;
 
 /** Update these to your live brand accounts and WhatsApp business number (country code, no +). */

@@ -11,7 +11,7 @@ export function Layout() {
 
   return (
     <div className="min-h-dvh">
-      <Header />
+      <Header onOpenCart={() => setIsCartOpen(true)} />
       <main className="pt-20">
         <Outlet />
       </main>
