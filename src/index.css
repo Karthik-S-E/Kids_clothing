@@ -7,8 +7,8 @@
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   
   /* Design Tokens - Colors */
-  --color-gold: #9a7b4f;
-  --color-gold-light: #d8c7a8;
+  --color-gold: #8a6b3f;
+  --color-gold-light: #c4a882;
   --color-gold-dark: #6f5738;
   --color-peacock: #526b66;
   --color-peacock-light: #91aaa3;
@@ -53,6 +53,20 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
   
+  /* Design Tokens - Type Scale (8-step modular scale) */
+  --text-xs: 0.75rem;    /* 12px - labels, metadata */
+  --text-sm: 0.875rem;   /* 14px - supporting text */
+  --text-base: 1rem;     /* 16px - body text */
+  --text-lg: 1.125rem;   /* 18px - emphasis */
+  --text-xl: 1.25rem;    /* 20px - subheadings */
+  --text-2xl: 1.5rem;    /* 24px - cards, small headings */
+  --text-3xl: 1.875rem;  /* 30px - section headings */
+  --text-4xl: 2.25rem;   /* 36px - large headings */
+  --text-5xl: 3rem;      /* 48px - hero */
+  --text-6xl: 3.75rem;   /* 60px - display */
+  --text-7xl: 4.5rem;    /* 72px - hero large */
+  --text-8xl: 6rem;      /* 96px - hero xl */
+  
   /* Design Tokens - Z-Index */
   --z-base: 1;
   --z-decorative: 10;
@@ -71,7 +85,7 @@
   --text-primary: #252525;
   --text-secondary: #68645d;
   --text-muted: #918b82;
-  --accent-primary: #9a7b4f;
+  --accent-primary: #8a6b3f;
   --accent-secondary: #526b66;
   --border: rgba(37, 37, 37, 0.10);
   --shadow-color: rgba(37, 37, 37, 0.10);
@@ -95,7 +109,7 @@
   --text-primary: #f6efe4;
   --text-secondary: #b7adbe;
   --text-muted: #918b82;
-  --accent-primary: #9a7b4f;
+  --accent-primary: #c4a882;
   --accent-secondary: #2dd4bf;
   --border: rgba(243, 230, 180, 0.1);
   --shadow-color: rgba(0, 0, 0, 0.3);
@@ -248,6 +262,24 @@ body::before {
   animation: fade-in 0.3s ease-out forwards;
 }
 
+/* Ken Burns Cinematic Image Motion */
+@keyframes kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate(-1.5%, -1%);
+  }
+  100% {
+    transform: scale(1.06) translate(1.5%, 0.5%);
+  }
+}
+
+.animate-kenburns {
+  animation: kenburns 20s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 /* Editorial Layout Utilities */
 .layout-editorial {
   display: grid;
@@ -333,4 +365,109 @@ body::before {
 .card-editorial:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
+}
+
+/* Admin Button Utilities */
+.btn-admin-primary {
+  background: var(--accent-primary);
+  color: var(--text-primary);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-admin-primary:hover {
+  background: var(--color-gold-light);
+}
+
+.btn-admin-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-admin-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  padding: var(--space-3) var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+}
+
+.btn-admin-secondary:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-admin-danger {
+  background: #ef4444;
+  color: white;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-admin-danger:hover {
+  background: #dc2626;
+}
+
+.btn-admin-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Small button variant for compact actions */
+.btn-admin-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.btn-admin-sm:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-admin-sm-danger {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: transparent;
+  color: rgb(252, 165, 165);
+}
+
+.btn-admin-sm-danger:hover {
+  border-color: rgb(248, 113, 113);
+  background: rgba(239, 68, 68, 0.1);
 }

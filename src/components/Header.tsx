@@ -1,224 +1,93 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useThemeStore } from "../store/themeStore";
-import { useBrandStore } from "../store/brandStore";
-import { NavItem } from "./SocialLinks";
-import { NavbarSearch } from "./NavbarSearch";
-import { MessageCircle, ShoppingBag, Menu, X } from "lucide-react";
-import { whatsappChatUrl } from "../lib/whatsapp";
+import { Link, useLocation } from "react-router-dom";
+import { User, ShoppingBag } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { social } from "../config";
 
-export function Header({ onOpenCart }: { onOpenCart: () => void }) {
-  const { theme, toggle } = useThemeStore();
-  const { settings, fetchSettings } = useBrandStore();
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const cartItemsCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const handleSearch = (term: string) => {
-    if (term.trim()) {
-      navigate(`/shop?q=${encodeURIComponent(term.trim())}`);
-    } else {
-      navigate("/shop");
-    }
-  };
-
+function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <header className="sticky top-0 z-[var(--z-sticky)] px-4 sm:px-8 pt-4">
-      <div className="glass mx-auto flex max-w-7xl items-center justify-between px-6 py-4 rounded-2xl border border-[var(--border)] shadow-lg backdrop-blur-xl bg-[var(--surface-elevated)]">
-        {/* Brand Logo & Name */}
-        <Link to="/" className="flex items-center gap-3.5 group">
-          {settings.logoUrl ? (
-            <img
-              src={settings.logoUrl}
-              alt={settings.name}
-              className="h-11 w-11 rounded-full object-cover ring-2 ring-[var(--accent-primary)]/70 shadow-md transition-transform group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-primary)] font-display text-lg font-bold text-[var(--text-primary)] shadow-md">
-              K
-            </div>
-          )}
-          <div className="leading-tight">
-            <p className="font-display text-2xl font-bold tracking-tight text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
-              {settings.name}
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-secondary)] font-medium">
-              Luxury Atelier
-            </p>
-          </div>
-        </Link>
-
-        {/* Desktop Navigation Links */}
-        <nav className="hidden items-center gap-8 md:flex text-sm font-medium uppercase tracking-[0.2em]">
-          <NavItem to="/">Home</NavItem>
-          <NavItem to="/shop">Shop</NavItem>
-          <NavItem to="/contact">Contact</NavItem>
-        </nav>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <NavbarSearch onSearch={handleSearch} />
-
-          <a
-            href={whatsappChatUrl()}
-            target="_blank"
-            rel="noreferrer"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#25D366]/15 border border-[#25D366]/30 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            WhatsApp
-          </a>
-
-          <button
-            type="button"
-            onClick={onOpenCart}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors shadow-sm"
-            aria-label="Shopping Cart"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {cartItemsCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-primary)] text-[10px] font-bold text-[var(--text-primary)]">
-                {cartItemsCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={toggle}
-            className="hidden sm:inline-flex border border-[var(--border)] px-3 py-2 text-xs font-medium uppercase tracking-widest cursor-pointer rounded-lg hover:border-[var(--accent-primary)] transition-colors"
-          >
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex md:hidden h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)]"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="mt-2 md:hidden glass rounded-2xl p-6 border border-[var(--border)] shadow-xl flex flex-col gap-4 bg-[var(--surface-elevated)]">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm uppercase tracking-[0.2em] font-semibold py-2 border-b border-[var(--border)]"
-          >
-            Home
-          </Link>
-          <Link
-            to="/shop"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm uppercase tracking-[0.2em] font-semibold py-2 border-b border-[var(--border)]"
-          >
-            Shop Collection
-          </Link>
-          <Link
-            to="/contact"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm uppercase tracking-[0.2em] font-semibold py-2 border-b border-[var(--border)]"
-          >
-            Contact Atelier
-          </Link>
-          <div className="flex items-center justify-between pt-2">
-            <a
-              href={whatsappChatUrl()}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md"
-            >
-              <MessageCircle className="h-4 w-4" /> WhatsApp Order
-            </a>
-            <button
-              type="button"
-              onClick={toggle}
-              className="border border-[var(--border)] px-3 py-2 text-xs font-medium uppercase tracking-widest rounded-lg"
-            >
-              {theme === "dark" ? "Light Mode" : "Dark Mode"}
-            </button>
-          </div>
-        </div>
-      )}
-    </header>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
   );
 }
 
-export function Footer() {
-  const { settings } = useBrandStore();
+export function Header() {
+  const location = useLocation();
+  const cartItems = useCartStore((s) => s.items);
+  const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <footer className="mt-24 border-t border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]">
-      <div className="mx-auto max-w-7xl px-6 lg:px-12 py-16 grid gap-12 md:grid-cols-4">
-        {/* Brand Info */}
-        <div className="md:col-span-2 space-y-4">
-          <div className="flex items-center gap-3.5">
-            {settings.logoUrl ? (
-              <img
-                src={settings.logoUrl}
-                alt={settings.name}
-                className="h-12 w-12 rounded-full object-cover ring-2 ring-[var(--accent-primary)]/50 shadow-md"
-              />
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-primary)] font-display text-xl font-bold text-[var(--text-primary)] shadow-md">
-                K
-              </div>
-            )}
-            <div>
-              <p className="font-display text-2xl font-bold tracking-tight">{settings.name}</p>
-              <p className="text-xs text-[var(--text-secondary)] tracking-wider uppercase">{settings.tagline}</p>
-            </div>
-          </div>
-          <p className="text-sm text-[var(--text-secondary)] font-light max-w-md leading-relaxed">
-            Creating timeless handcrafted children's ethnic wear with uncompromising devotion to comfort, quality, and royal traditional elegance.
-          </p>
-        </div>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E2D9]">
+      <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
+        {/* Brand */}
+        <Link to="/" className="font-serif text-2xl tracking-tight text-[#281E15]">
+          Kandamma Kids
+        </Link>
 
-        {/* Quick Links */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-primary)] mb-4">Navigation</p>
-          <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
-            <li>
-              <Link to="/shop" className="hover:text-[var(--accent-primary)] transition-colors">Complete Collection</Link>
-            </li>
-            <li>
-              <Link to="/contact" className="hover:text-[var(--accent-primary)] transition-colors">Atelier Contact</Link>
-            </li>
-            <li>
-              <Link to="/admin" className="hover:text-[var(--accent-primary)] transition-colors">Admin Portal</Link>
-            </li>
-          </ul>
-        </div>
+        {/* Center Nav */}
+        <nav className="hidden md:flex items-center space-x-8">
+          <Link
+            to="/shop"
+            className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
+              isActive("/shop") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+            }`}
+          >
+            SHOP
+          </Link>
+          <Link
+            to="/about"
+            className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
+              isActive("/about") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+            }`}
+          >
+            ABOUT
+          </Link>
+          <Link
+            to="/contact"
+            className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
+              isActive("/contact") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+            }`}
+          >
+            CONTACT
+          </Link>
+        </nav>
 
-        {/* WhatsApp Support & Hours */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-primary)] mb-4">WhatsApp Concierge</p>
-          <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
-            Place orders and chat with our stylists instantly on WhatsApp.
-          </p>
+        {/* Right Actions */}
+        <div className="flex items-center space-x-5 text-[#281E15]">
           <a
-            href={whatsappChatUrl()}
+            href={social.instagram}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#20ba59] transition-all"
+            className="hover:opacity-70 transition-opacity"
+            aria-label="Instagram"
           >
-            <MessageCircle className="h-4 w-4" /> Open WhatsApp
+            <InstagramIcon className="h-5 w-5" />
           </a>
+          <Link to="/admin" className="hover:opacity-70 transition-opacity" aria-label="Admin">
+            <User className="h-5 w-5" />
+          </Link>
+          <Link to="/shop" className="relative hover:opacity-70 transition-opacity" aria-label="Cart">
+            <ShoppingBag className="h-5 w-5" />
+            {totalCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white">
+                {totalCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
-
-      <div className="border-t border-[var(--border)] py-8 px-6 text-center text-xs text-[var(--text-secondary)] tracking-widest uppercase">
-        © {new Date().getFullYear()} {settings.name}. All Rights Reserved. Crafted with Elegance.
-      </div>
-    </footer>
+    </header>
   );
 }

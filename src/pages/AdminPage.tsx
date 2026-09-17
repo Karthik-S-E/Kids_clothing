@@ -1,4 +1,4 @@
-import { type FormEvent, useState, useEffect } from "react";
+import { type FormEvent, useState, useEffect, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { genders, ageRanges as defaultAgeRanges, type Gender, type Product, type ProductInput } from "../config";
 import { formatINR } from "../lib/formatINR";
@@ -39,12 +39,28 @@ export function AdminPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [logoBusy, setLogoBusy] = useState(false);
 
+  // Dynamic Age Range states
+  const [customAgeInput, setCustomAgeInput] = useState("");
+  const [isCustomAgeMode, setIsCustomAgeMode] = useState(false);
+  const [customAgeList, setCustomAgeList] = useState<string[]>([]);
+
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Combine default ranges, custom ranges, and any existing ranges from current inventory
+  const availableAgeRanges = useMemo(() => {
+    const set = new Set<string>([...defaultAgeRanges, ...customAgeList]);
+    products.forEach((p) => {
+      if (p.ageRange && p.ageRange.trim()) {
+        set.add(p.ageRange.trim());
+      }
+    });
+    return Array.from(set);
+  }, [products, customAgeList]);
 
   if (loading) {
     return (
@@ -128,6 +144,8 @@ export function AdminPage() {
     });
     setRawSizes((product.sizes || []).join(", ").toUpperCase());
     setEditingId(product.id);
+    setIsCustomAgeMode(false);
+    setCustomAgeInput("");
     setMsg(null);
     setValidationErrors([]);
   }
@@ -136,6 +154,8 @@ export function AdminPage() {
     setForm(empty);
     setRawSizes("");
     setEditingId(null);
+    setIsCustomAgeMode(false);
+    setCustomAgeInput("");
     setMsg(null);
     setValidationErrors([]);
   }
@@ -209,6 +229,8 @@ export function AdminPage() {
 
       setForm(empty);
       setRawSizes("");
+      setIsCustomAgeMode(false);
+      setCustomAgeInput("");
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -220,13 +242,13 @@ export function AdminPage() {
     <section className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--accent-primary)]">Protected</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--accent-primary)]">Protected</p>
           <h1 className="font-display text-5xl">Inventory Dashboard</h1>
         </div>
         <button
           type="button"
           onClick={logout}
-          className="rounded-full border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5 transition-colors cursor-pointer"
+          className="btn-admin-secondary"
         >
           Sign out
         </button>
@@ -242,7 +264,7 @@ export function AdminPage() {
               className="h-16 w-16 rounded-full object-cover ring-2 ring-[var(--accent-primary)]/70 shadow"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-primary)] text-lg font-bold text-[var(--text-primary)]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-primary)] text-lg font-bold text-white">
               KK
             </div>
           )}
@@ -251,7 +273,7 @@ export function AdminPage() {
             <p className="text-xs text-[var(--text-secondary)]">Upload your round Krishna logo here</p>
           </div>
         </div>
-        <label className="cursor-pointer rounded-full bg-[var(--accent-primary)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--color-gold-light)] transition-colors">
+        <label className="cursor-pointer btn-admin-primary">
           {logoBusy ? "Saving..." : "Upload Logo"}
           <input
             type="file"
@@ -318,8 +340,8 @@ export function AdminPage() {
             {/* Individual Color Photo Uploads */}
             {parsedColors.length > 0 && (
               <div className="rounded-xl border border-[var(--border)] bg-white/5 p-4 space-y-3">
-                <p className="text-xs uppercase font-bold tracking-wider text-[var(--accent-primary)]">
-                  Photos for Each Color (Optional):
+                <p className="text-xs font-semibold tracking-wider text-[var(--accent-primary)]">
+                  Photos for each color (optional):
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {parsedColors.map((clr) => (
@@ -327,7 +349,7 @@ export function AdminPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-white">{clr}</span>
                         {form.colorImages?.[clr] && (
-                          <span className="text-[10px] text-[var(--success)] font-bold">Uploaded ✓</span>
+                          <span className="text-xs text-[var(--success)] font-bold">Uploaded ✓</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -338,7 +360,7 @@ export function AdminPage() {
                             className="h-10 w-10 rounded-lg object-cover border border-[var(--accent-primary)]"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center text-[10px] text-[var(--text-secondary)]">
+                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center text-xs text-[var(--text-secondary)]">
                             None
                           </div>
                         )}
@@ -346,7 +368,7 @@ export function AdminPage() {
                           type="file"
                           accept="image/*"
                           onChange={(e) => onColorFile(clr, e.target.files?.[0])}
-                          className="w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-2.5 file:py-1 file:text-[10px] file:font-semibold file:text-[var(--text-primary)] cursor-pointer"
+                          className="w-full text-xs file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-4 file:py-2 file:text-xs file:font-semibold file:text-[var(--text-primary)] file:uppercase file:tracking-wider cursor-pointer"
                         />
                       </div>
                     </div>
@@ -393,7 +415,7 @@ export function AdminPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => onMainFile(e.target.files?.[0])}
-                className="mt-1 w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--text-primary)] cursor-pointer"
+                className="mt-1 w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-primary)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--text-primary)] file:uppercase file:tracking-wider cursor-pointer"
               />
             </label>
 
@@ -429,22 +451,87 @@ export function AdminPage() {
                 </select>
               </label>
 
-              <label className="block text-sm">
-                Age Range / Group
-                <select
-                  required
-                  value={form.ageRange}
-                  onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
-                >
-                  <option value="" className="bg-zinc-900 text-white">Select age range</option>
-                  {defaultAgeRanges.map((a) => (
-                    <option key={a} value={a} className="bg-zinc-900 text-white">
-                      {a}
+              {/* Dynamic Age Range Selector */}
+              <div className="block text-sm">
+                <div className="flex items-center justify-between">
+                  <span>Age Range / Group</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomAgeMode(!isCustomAgeMode);
+                      setCustomAgeInput("");
+                    }}
+                    className="text-xs font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                  >
+                    {isCustomAgeMode ? "← Choose existing" : "+ Custom age"}
+                  </button>
+                </div>
+
+                {!isCustomAgeMode ? (
+                  <select
+                    required
+                    value={form.ageRange}
+                    onChange={(e) => {
+                      if (e.target.value === "CUSTOM_MODE") {
+                        setIsCustomAgeMode(true);
+                      } else {
+                        setForm({ ...form, ageRange: e.target.value });
+                      }
+                    }}
+                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
+                  >
+                    <option value="" className="bg-zinc-900 text-white">
+                      Select age range
                     </option>
-                  ))}
-                </select>
-              </label>
+                    {availableAgeRanges.map((a) => (
+                      <option key={a} value={a} className="bg-zinc-900 text-white">
+                        {a}
+                      </option>
+                    ))}
+                    <option value="CUSTOM_MODE" className="bg-zinc-900 text-[var(--accent-primary)] font-bold">
+                      + Add custom range...
+                    </option>
+                  </select>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={customAgeInput}
+                      onChange={(e) => setCustomAgeInput(e.target.value)}
+                      placeholder="e.g. 9-12 Years, 12-15 Years"
+                      className="w-full rounded-xl border border-[var(--accent-primary)] bg-transparent px-4 py-2.5 text-xs focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const trimmed = customAgeInput.trim();
+                        if (trimmed) {
+                          if (!customAgeList.includes(trimmed)) {
+                            setCustomAgeList((prev) => [...prev, trimmed]);
+                          }
+                          setForm({ ...form, ageRange: trimmed });
+                        }
+                        setIsCustomAgeMode(false);
+                        setCustomAgeInput("");
+                      }}
+                      className="shrink-0 btn-admin-sm"
+                    >
+                      Set
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomAgeMode(false);
+                        setCustomAgeInput("");
+                      }}
+                      className="shrink-0 btn-admin-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <label className="block text-sm">
@@ -505,7 +592,7 @@ export function AdminPage() {
                   type="button"
                   onClick={onCancelEdit}
                   disabled={busy}
-                  className="flex-1 rounded-full border border-[var(--border)] py-3 text-sm font-semibold uppercase tracking-widest hover:border-[var(--accent-primary)] cursor-pointer"
+                  className="flex-1 btn-admin-secondary"
                 >
                   Cancel
                 </button>
@@ -513,7 +600,7 @@ export function AdminPage() {
               <button
                 type="submit"
                 disabled={busy || !form.image}
-                className="flex-1 rounded-full bg-[var(--accent-primary)] py-3 text-sm font-semibold uppercase tracking-widest text-[var(--text-primary)] disabled:opacity-50 hover:bg-[var(--color-gold-light)] cursor-pointer"
+                className="flex-1 btn-admin-primary"
               >
                 {busy ? "Saving..." : editingId ? "Update piece" : "Publish piece"}
               </button>
@@ -530,7 +617,7 @@ export function AdminPage() {
               <div key={p.id} className="glass flex items-center gap-4 rounded-xl p-4 border border-[var(--border)]">
                 <img src={p.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{p.name}</p>
+                  <p className="line-clamp-2 font-medium">{p.name}</p>
                   <p className="text-sm text-[var(--accent-primary)]">{formatINR(p.price)}</p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     {p.ageRange} · Sizes: {(p.sizes || []).join(", ")}
@@ -542,14 +629,14 @@ export function AdminPage() {
                   <button
                     type="button"
                     onClick={() => onEdit(p)}
-                    className="rounded-full border border-[var(--border)] px-3 py-1 text-xs hover:border-[var(--accent-primary)] cursor-pointer"
+                    className="btn-admin-sm"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeletingProduct(p)}
-                    className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-red-300 hover:border-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    className="btn-admin-sm-danger"
                   >
                     Remove
                   </button>
@@ -581,7 +668,7 @@ export function AdminPage() {
                 className="h-12 w-12 rounded-xl object-cover"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{deletingProduct.name}</p>
+                <p className="line-clamp-2 text-sm font-semibold">{deletingProduct.name}</p>
                 <p className="text-xs text-[var(--accent-primary)]">{formatINR(deletingProduct.price)}</p>
               </div>
             </div>
@@ -591,7 +678,7 @@ export function AdminPage() {
                 type="button"
                 disabled={deleteBusy}
                 onClick={() => setDeletingProduct(null)}
-                className="flex-1 rounded-full border border-[var(--border)] py-2.5 text-xs font-semibold uppercase tracking-wider hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
+                className="flex-1 btn-admin-secondary"
               >
                 Cancel
               </button>
@@ -599,7 +686,7 @@ export function AdminPage() {
                 type="button"
                 disabled={deleteBusy}
                 onClick={handleConfirmDelete}
-                className="flex-1 rounded-full bg-red-500 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex-1 btn-admin-danger"
               >
                 {deleteBusy ? "Deleting..." : "Yes, Delete"}
               </button>

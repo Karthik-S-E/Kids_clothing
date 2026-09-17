@@ -16,7 +16,7 @@ export function Footer() {
               className="h-12 w-12 rounded-full object-cover ring-1 ring-[var(--accent-primary)]/50 shadow-md"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-primary)] font-bold text-[var(--text-primary)] text-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-primary)] font-bold text-white text-sm">
               KK
             </div>
           )}
@@ -33,7 +33,7 @@ export function Footer() {
         <SocialLinks />
       </div>
       <p className="pb-8 text-center text-xs text-[var(--text-secondary)]">
-        © {new Date().getFullYear()} {settings.name}.ನಿಮ್ಮ ಸೇವೆಗಾಗಿ.
+        © {new Date().getFullYear()} {settings.name}.ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ.
       </p>
     </footer>
   );

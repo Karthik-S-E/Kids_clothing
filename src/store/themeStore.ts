@@ -17,12 +17,14 @@ function applyTheme(theme: Theme) {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: "dark",
+      theme: "light",
+
       toggle: () => {
         const next = get().theme === "dark" ? "light" : "dark";
         applyTheme(next);
         set({ theme: next });
       },
+
       setTheme: (theme) => {
         applyTheme(theme);
         set({ theme });
@@ -31,7 +33,7 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: "kandamma.theme",
       onRehydrateStorage: () => (state) => {
-        applyTheme(state?.theme ?? "dark");
+        applyTheme(state?.theme ?? "light");
       },
     },
   ),

@@ -15,10 +15,10 @@ export function Marquee({
   className = "",
 }: MarqueeProps) {
   return (
-    <div className={`overflow-hidden ${className}`}>
+    <div className={`overflow-hidden select-none ${className}`}>
       <motion.div
         animate={{
-          x: direction === "left" ? [-1000, 0] : [0, -1000],
+          x: direction === "left" ? ["0%", "-50%"] : ["-50%", "0%"],
         }}
         transition={{
           repeat: Infinity,
@@ -26,11 +26,10 @@ export function Marquee({
           duration: speed,
           ease: "linear",
         }}
-        className="flex whitespace-nowrap"
+        className="flex whitespace-nowrap will-change-transform"
       >
-        {children}
-        {children}
-        {children}
+        <div className="flex shrink-0 items-center">{children}</div>
+        <div className="flex shrink-0 items-center" aria-hidden="true">{children}</div>
       </motion.div>
     </div>
   );
