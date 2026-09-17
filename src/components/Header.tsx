@@ -1,7 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { User, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { social } from "../config";
+
+interface HeaderProps {
+  onOpenCart?: () => void;
+}
 
 function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -21,7 +25,7 @@ function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-export function Header() {
+export function Header({ onOpenCart }: HeaderProps) {
   const location = useLocation();
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -75,17 +79,21 @@ export function Header() {
           >
             <InstagramIcon className="h-5 w-5" />
           </a>
-          <Link to="/admin" className="hover:opacity-70 transition-opacity" aria-label="Admin">
-            <User className="h-5 w-5" />
-          </Link>
-          <Link to="/shop" className="relative hover:opacity-70 transition-opacity" aria-label="Cart">
+
+          {/* Cart Trigger */}
+          <button
+            type="button"
+            onClick={onOpenCart}
+            className="relative cursor-pointer hover:opacity-70 transition-opacity"
+            aria-label="Open cart"
+          >
             <ShoppingBag className="h-5 w-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white">
                 {totalCount}
               </span>
             )}
-          </Link>
+          </button>
         </div>
       </div>
     </header>
