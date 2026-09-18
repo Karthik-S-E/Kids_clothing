@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles, ExternalLink } from "lucide-react";
+import { X, Send, Sparkles, ExternalLink, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProductStore } from "../store/productStore";
 import { formatINR } from "../lib/formatINR";
@@ -15,15 +15,19 @@ type HistoryEntry = {
   parts: Array<{ text: string }>;
 };
 
-export function AiStylistModal() {
-  const [open, setOpen] = useState(false);
+interface AiStylistModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<HistoryEntry[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      text: "Namaste! I'm your Kandamma Kids stylist. Tell me the child's age, gender, or festival you're shopping for!",
+      text: "Namaste! I am your Kandamma Kids assistant. Tell me your child's age, gender, or festival you are shopping for!",
     },
   ]);
 
@@ -31,8 +35,10 @@ export function AiStylistModal() {
   const products = useProductStore((s) => s.products);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, loading, isOpen]);
 
   async function handleSend() {
     if (!input.trim() || loading) return;
@@ -51,20 +57,19 @@ export function AiStylistModal() {
       const productCatalog = products
         .map(
           (p) =>
-            `[ID: ${p.id}] ${p.name} | ${p.gender} | Age: ${p.ageRange} | Sizes: ${(p.sizes || []).join(", ")} | Price: ${formatINR(p.price)} | Status: ${p.stockStatus ?? true ? "In Stock" : "Out of Stock"}`
+            `[ID: ${p.id}] ${p.name} | ${p.gender} | Age: ${p.ageRange} | Sizes: ${(p.sizes || []).join(", ")} | Price: ${formatINR(p.price)}`
         )
         .join("\n");
 
-      const systemInstruction = `You are an expert children's ethnic stylist for "Kandamma Kids".
+      const systemInstruction = `You are a helpful children's ethnic clothing assistant for "Kandamma Kids" in India.
 Current Inventory:
 ${productCatalog || "No live products currently."}
 
 STRICT RESPONSE RULES:
-1. NEVER repeat greetings ("Hello", "Welcome to Kandamma Kids") after the very first interaction. Jump straight into recommendations or clarifying questions.
-2. DO NOT use raw markdown formatting asterisks like "**Product**" or bullet list stars "*". Speak in natural, polished sentences.
-3. Whenever you suggest a product from the inventory, include its exact ID inside double curly brackets, e.g.: {{ID:kk-peacock-kurta}}. The UI will automatically render interactive product cards for them.
-4. If an outfit is out of stock, clearly mention it.
-5. Keep answers concise, helpful, and under 3-4 sentences.`;
+1. Speak in friendly, simple, direct English commonly used in India.
+2. DO NOT use confusing high-fashion words like "atelier", "curated masterpieces", or "concierge".
+3. Whenever you recommend an outfit from the inventory, include its exact ID in double curly brackets, e.g. {{ID:kk-peacock-kurta}}.
+4. Keep answers short, helpful, and under 3 sentences.`;
 
       const res = await fetch("/api/stylist", {
         method: "POST",
@@ -78,8 +83,7 @@ STRICT RESPONSE RULES:
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "API error");
 
-      const rawReply = data?.text || "I couldn't process that right now. Please message us on WhatsApp!";
-
+      const rawReply = data?.text || "I could not check right now. Please message us on WhatsApp!";
       const idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)].map((m) => m[1].trim());
       const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").trim();
 
@@ -98,124 +102,120 @@ STRICT RESPONSE RULES:
       ]);
     } catch (err: unknown) {
       console.error("Gemini Stylist Error:", err);
-      const message = err instanceof Error ? err.message : "Connection failed. Please check your network.";
-      setMessages((prev) => [
-        ...prev,
-        { role: "model", text: message },
-      ]);
+      const message =
+        err instanceof Error ? err.message : "Connection failed. Please check your network or message us on WhatsApp.";
+      setMessages((prev) => [...prev, { role: "model", text: message }]);
     } finally {
       setLoading(false);
     }
   }
 
+  if (!isOpen) return null;
+
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-40 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-teal-600 to-emerald-400 text-white shadow-[0_0_24px_rgba(20,184,166,0.5)] transition hover:scale-110 active:scale-95 cursor-pointer"
-        aria-label="AI Stylist"
-      >
-        <Sparkles className="h-6 w-6 text-amber-200 animate-pulse" />
-      </button>
-
-      {open && (
-        <div className="fixed bottom-24 right-6 z-[160] flex h-[560px] w-[360px] flex-col rounded-[2rem] border border-[var(--line)] bg-[var(--bg-elev)] shadow-2xl backdrop-blur-2xl overflow-hidden sm:w-[420px]">
-          <div className="flex items-center justify-between border-b border-[var(--line)] bg-black/25 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-gold" />
-              <h3 className="font-display text-xl font-semibold">Kandamma AI Stylist</h3>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:justify-end sm:pr-8 p-3 bg-black/60 backdrop-blur-xs">
+      <div className="flex h-[560px] w-full max-w-[400px] flex-col rounded-2xl border border-stone-300 bg-white text-stone-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-stone-200 bg-stone-100 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white">
+              <Bot className="h-4 w-4" />
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-full p-1 text-[var(--muted)] hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div>
+              <h3 className="font-semibold text-sm text-stone-900">Kandamma AI Assistant</h3>
+              <p className="text-[11px] text-stone-500">Ask for size or outfit suggestions</p>
+            </div>
           </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin text-sm">
-            {messages.map((m, idx) => (
-              <div key={idx} className="space-y-2">
-                <div
-                  className={`max-w-[85%] rounded-2xl p-3.5 leading-relaxed shadow-sm ${
-                    m.role === "user"
-                      ? "ml-auto bg-gold text-ink font-medium"
-                      : "mr-auto bg-black/35 border border-[var(--line)] text-[var(--text)]"
-                  }`}
-                >
-                  <p className="whitespace-pre-line text-xs sm:text-[13px]">{m.text}</p>
-                </div>
-
-                {m.recommendedIds && (
-                  <div className="mr-auto w-full max-w-[92%] space-y-2 pt-1">
-                    {m.recommendedIds.map((pId) => {
-                      const prod = products.find((p) => p.id === pId);
-                      if (!prod) return null;
-                      return (
-                        <div
-                          key={prod.id}
-                          className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-black/40 p-2.5 backdrop-blur transition-colors hover:border-gold"
-                        >
-                          <img
-                            src={prod.image}
-                            alt={prod.name}
-                            className="h-12 w-12 rounded-xl object-cover"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-semibold">{prod.name}</p>
-                            <p className="text-[11px] text-gold font-bold">
-                              {formatINR(prod.price)}
-                              <span className="ml-2 font-normal text-[var(--muted)]">
-                                {prod.ageRange}
-                              </span>
-                            </p>
-                          </div>
-                          <Link
-                            to={`/shop/${prod.id}`}
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink hover:bg-yellow-400 transition-colors"
-                          >
-                            <span>View</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {loading && (
-              <div className="mr-auto flex items-center gap-2 rounded-2xl bg-black/20 px-3.5 py-2.5 text-xs text-[var(--muted)]">
-                <Sparkles className="h-3.5 w-3.5 animate-spin text-gold" />
-                <span>Finding the best fits...</span>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="border-t border-[var(--line)] bg-black/15 p-3 flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Ask for outfits (e.g. Silk frock for 3 year girl)..."
-              className="flex-1 rounded-full border border-[var(--line)] bg-transparent px-4 py-2.5 text-xs outline-none focus:border-gold transition-colors"
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-ink disabled:opacity-40 transition hover:bg-yellow-400 cursor-pointer"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-1.5 text-stone-400 hover:bg-stone-200 hover:text-stone-800 transition cursor-pointer"
+            aria-label="Close Assistant"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-      )}
-    </>
+
+        {/* Message Thread */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#faf8f5]">
+          {messages.map((m, idx) => (
+            <div key={idx} className="space-y-2">
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-xs ${
+                  m.role === "user"
+                    ? "ml-auto bg-stone-900 text-white font-medium"
+                    : "mr-auto bg-white border border-stone-200 text-stone-800"
+                }`}
+              >
+                <p className="whitespace-pre-line">{m.text}</p>
+              </div>
+
+              {m.recommendedIds && (
+                <div className="mr-auto w-full max-w-[92%] space-y-2 pt-1">
+                  {m.recommendedIds.map((pId) => {
+                    const prod = products.find((p) => p.id === pId);
+                    if (!prod) return null;
+                    return (
+                      <div
+                        key={prod.id}
+                        className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-2.5 shadow-xs"
+                      >
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold text-stone-900">{prod.name}</p>
+                          <p className="text-xs font-bold text-amber-800">
+                            {formatINR(prod.price)}
+                            <span className="ml-2 font-normal text-stone-500">{prod.ageRange}</span>
+                          </p>
+                        </div>
+                        <Link
+                          to={`/shop/${prod.id}`}
+                          onClick={onClose}
+                          className="flex items-center gap-1 rounded-md bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-stone-800"
+                        >
+                          <span>View</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {loading && (
+            <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white border border-stone-200 px-3.5 py-2 text-xs text-stone-500">
+              <Sparkles className="h-3.5 w-3.5 animate-spin text-amber-600" />
+              <span>Finding best matching outfits...</span>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Bar */}
+        <div className="border-t border-stone-200 bg-white p-3 flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder="Type your question (e.g. 3 yr girl dress)..."
+            className="flex-1 rounded-full border border-stone-300 bg-stone-50 px-4 py-2.5 text-xs text-stone-900 outline-none focus:border-stone-800 transition"
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-900 text-white disabled:opacity-40 transition hover:bg-stone-800 cursor-pointer"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

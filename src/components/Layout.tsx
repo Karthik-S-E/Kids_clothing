@@ -1,24 +1,29 @@
-import { Outlet } from "react-router-dom";
 import { useState } from "react";
-import { Footer } from "./Footer";
+import { Outlet } from "react-router-dom";
 import { Header } from "./Header";
-import { FloatingActionDock } from "./FloatingActionDock";
+import { Footer } from "./Footer";
 import { CartModal } from "./CartModal";
 import { AiStylistModal } from "./AiStylistModal";
+import { FloatingActionDock } from "./FloatingActionDock";
 
 export function Layout() {
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   return (
-    <div className="min-h-dvh">
-      <Header onOpenCart={() => setIsCartOpen(true)} />
-      <main className="pt-20">
+    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
+      <Header onOpenCart={() => setCartOpen(true)} />
+      <main className="flex-1 pt-16">
         <Outlet />
       </main>
       <Footer />
-      <FloatingActionDock onCartClick={() => setIsCartOpen(true)} />
-      <AiStylistModal />
-      <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      
+      {/* WhatsApp & AI Assistant floating buttons */}
+      <FloatingActionDock onAiClick={() => setAiOpen((prev) => !prev)} />
+
+      {/* Modals */}
+      <CartModal isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <AiStylistModal isOpen={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }
