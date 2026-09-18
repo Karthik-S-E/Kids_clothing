@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, User } from "lucide-react";
+import { ShoppingBag, User, Menu, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useBrandStore } from "../store/brandStore";
 import { social } from "../config";
@@ -28,6 +28,7 @@ function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
 }
 
 export function Header({ onOpenCart }: HeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -40,35 +41,53 @@ export function Header({ onOpenCart }: HeaderProps) {
     }
   }, [settings.logoUrl, fetchSettings]);
 
+  // Close drawer on route navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8E2D9]">
-      <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
-        {/* Brand Logo & Name Stack */}
-        <Link to="/" className="flex items-center gap-3 group">
-          {settings.logoUrl ? (
-            <img
-              src={settings.logoUrl}
-              alt={settings.name}
-              className="h-10 w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0"
-            />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0">
-              KK
-            </div>
-          )}
-          <div className="flex flex-col text-left justify-center">
-            <span className="font-serif text-xl tracking-tight text-[#281E15] leading-none">
-              {settings.name || "Kandamma Kids"}
-            </span>
-            <span className="text-[11px] font-medium text-[#786E64] tracking-normal mt-1 leading-none">
-              ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
-            </span>
-          </div>
-        </Link>
+      <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6">
+        
+        {/* Left Side: Mobile Menu Button + Logo Stack */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* 3-line hamburger button (Mobile only) */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-1.5 text-[#281E15] hover:opacity-70 transition cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
 
-        {/* Center Nav */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            {settings.logoUrl ? (
+              <img
+                src={settings.logoUrl}
+                alt={settings.name}
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0">
+                KK
+              </div>
+            )}
+            <div className="flex flex-col text-left justify-center">
+              <span className="font-serif text-lg sm:text-xl tracking-tight text-[#281E15] leading-none">
+                {settings.name || "Kandamma Kids"}
+              </span>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#786E64] tracking-normal mt-0.5 leading-none">
+                ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
+              </span>
+            </div>
+          </Link>
+        </div>
+
+        {/* Center Nav (Desktop only) */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link
             to="/shop"
@@ -97,7 +116,7 @@ export function Header({ onOpenCart }: HeaderProps) {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center space-x-5 text-[#281E15]">
+        <div className="flex items-center space-x-4 sm:space-x-5 text-[#281E15]">
           <a
             href={social.instagram}
             target="_blank"
@@ -108,7 +127,6 @@ export function Header({ onOpenCart }: HeaderProps) {
             <InstagramIcon className="h-5 w-5" />
           </a>
 
-          {/* Admin Login Button */}
           <Link
             to="/admin/login"
             className="hover:opacity-70 transition-opacity"
@@ -118,7 +136,6 @@ export function Header({ onOpenCart }: HeaderProps) {
             <User className="h-5 w-5" />
           </Link>
 
-          {/* Cart Trigger */}
           <button
             type="button"
             onClick={onOpenCart}
@@ -134,6 +151,38 @@ export function Header({ onOpenCart }: HeaderProps) {
           </button>
         </div>
       </div>
+
+      {/* Mobile Slide-Down Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          <nav className="flex flex-col space-y-4">
+            <Link
+              to="/shop"
+              className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 ${
+                isActive("/shop") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
+              }`}
+            >
+              SHOP
+            </Link>
+            <Link
+              to="/about"
+              className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 ${
+                isActive("/about") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
+              }`}
+            >
+              ABOUT
+            </Link>
+            <Link
+              to="/contact"
+              className={`text-sm font-semibold tracking-widest uppercase py-1 ${
+                isActive("/contact") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
+              }`}
+            >
+              CONTACT
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
