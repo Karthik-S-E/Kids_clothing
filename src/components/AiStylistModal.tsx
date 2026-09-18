@@ -28,7 +28,7 @@ export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      text: "Hello! Welcome to Kandamma Kids. How may I help you today? Tell me what you're looking for, or mention your child's age and gender!",
+      text: "Hello! Welcome to Kandamma Kids. How may I help you today? Tell me what you're looking for, or share your child's age!",
     },
   ]);
 
@@ -41,33 +41,60 @@ export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
     }
   }, [messages, loading, isOpen]);
 
-  // Client-side fallback matcher if AI forgets to include {{ID:...}}
+  // Robust client-side keyword & age range parser
   function matchProductsByKeywords(query: string) {
     const q = query.toLowerCase();
-    return products.filter((p) => {
-      const name = p.name.toLowerCase();
-      const desc = (p.description || "").toLowerCase();
-      const age = (p.ageRange || "").toLowerCase();
-      const gender = (p.gender || "").toLowerCase();
 
-      // Check age patterns like "3", "3y", "2-4", "4-8"
-      const ageMatch = q.match(/\b([1-8])\b/) || q.match(/\b([1-8])-([1-8])\b/);
+    // 1. Extract any numeric age mention: "4", "4y", "4year", "4 years", "4-8"
+    const singleAgeMatch = q.match(/(\d+)\s*(?:y|yr|yrs|year|years)?/);
+    const parsedTargetAge = singleAgeMatch ? parseInt(singleAgeMatch[1], 10) : null;
+
+    // Check if query mentions gender or style
+    const isGirl = q.includes("girl") || q.includes("frock") || q.includes("gown") || q.includes("lehenga");
+    const isBoy = q.includes("boy") || q.includes("kurta") || q.includes("sherwani");
+
+    const matched = products.filter((p) => {
+      const pName = p.name.toLowerCase();
+      const pDesc = (p.description || "").toLowerCase();
+      const pGender = (p.gender || "").toLowerCase();
+      const pAge = (p.ageRange || "").toLowerCase();
+
+      // Check age range overlap (e.g. product "2-5 Years", target 4 -> 2 <= 4 <= 5 is TRUE)
       let matchesAge = false;
-      if (ageMatch) {
-        matchesAge = age.includes(ageMatch[0]);
+      if (parsedTargetAge !== null) {
+        const rangeDigits = pAge.match(/\d+/g);
+        if (rangeDigits && rangeDigits.length >= 2) {
+          const min = parseInt(rangeDigits[0], 10);
+          const max = parseInt(rangeDigits[1], 10);
+          if (parsedTargetAge >= min && parsedTargetAge <= max) {
+            matchesAge = true;
+          }
+        } else if (rangeDigits && rangeDigits.length === 1) {
+          if (parsedTargetAge === parseInt(rangeDigits[0], 10)) {
+            matchesAge = true;
+          }
+        }
       }
 
+      // Gender Match
       const matchesGender =
-        (q.includes("girl") && gender.includes("girl")) ||
-        (q.includes("boy") && gender.includes("boy"));
+        (isGirl && pGender.includes("girl")) ||
+        (isBoy && pGender.includes("boy"));
 
-      const matchesTerm =
-        (q.includes("gown") && name.includes("gown")) ||
-        (q.includes("lehenga") && name.includes("lehenga")) ||
-        (q.includes("kurta") && name.includes("kurta"));
+      // Style terms
+      const matchesStyle =
+        (q.includes("gown") && pName.includes("gown")) ||
+        (q.includes("lehenga") && pName.includes("lehenga")) ||
+        (q.includes("kurta") && pName.includes("kurta"));
 
-      return matchesAge || matchesGender || matchesTerm || name.includes(q) || desc.includes(q);
+      if (matchesAge && (isGirl || isBoy)) {
+        return matchesAge && matchesGender;
+      }
+
+      return matchesAge || matchesStyle || pName.includes(q) || pDesc.includes(q);
     });
+
+    return matched.length > 0 ? matched : products.slice(0, 3);
   }
 
   async function handleSend() {
@@ -87,24 +114,18 @@ export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
       const productCatalog = products
         .map(
           (p) =>
-            `ID: ${p.id} | Name: ${p.name} | Gender: ${p.gender} | Age: ${p.ageRange} | Price: ${formatINR(p.price)} | Details: ${p.description || ""}`
+            `ID: ${p.id} | Name: ${p.name} | Gender: ${p.gender} | Age Range: ${p.ageRange} | Price: ${formatINR(p.price)}`
         )
         .join("\n");
 
-      const systemInstruction = `You are the friendly, helpful shopping assistant for Kandamma Kids ethnic clothing.
+      const systemInstruction = `You are the friendly AI shopping assistant for Kandamma Kids.
+Current Inventory:
+${productCatalog}
 
-Current Inventory Database:
-${productCatalog || "No live products currently."}
-
-HOW TO RESPOND:
-1. Greet politely and warmly like an expert store assistant.
-2. When the user mentions an age (e.g. "2-4", "3 year old", "5Y"), gender (boy/girl), or outfit style (lehenga, gown, kurta):
-   - Immediately search the inventory above.
-   - Recommend 1 to 3 relevant products.
-   - ALWAYS write each product's exact ID in double curly brackets like {{ID:product_id}} right in your response.
-   - Explain briefly why each piece is great for that age or event.
-3. If they just say an age like "2-4" or "3", look for all outfits fitting that age bracket in the inventory and suggest them immediately.
-4. Keep the total response warm, natural, and within 2 to 3 sentences. Never output dry computer log text like "Requirement: Parsed age".`;
+CRITICAL RULES:
+1. Always suggest 1 to 3 matching products for the child's age, gender, or requested outfit.
+2. For EVERY recommendation, you MUST embed its exact ID like {{ID:product_id}} in your reply.
+3. Keep your message short, warm, and friendly (under 35 words).`;
 
       const res = await fetch("/api/stylist", {
         method: "POST",
@@ -116,25 +137,23 @@ HOW TO RESPOND:
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "API error");
+      if (!res.ok) throw new Error(data?.error || "API request failed");
 
-      const rawReply = data?.text || "Here are some outfits you might love!";
+      const rawReply = data?.text || "Here are great options for your child!";
       let idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)].map((m) => m[1].trim());
       const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").trim();
 
-      // If AI didn't return explicit ID brackets, run local keyword match so cards still appear
+      // Fallback: If AI didn't tag {{ID:...}}, our deterministic matcher injects them
       if (idMatches.length === 0) {
-        const fallbacks = matchProductsByKeywords(userMsg);
-        if (fallbacks.length > 0) {
-          idMatches = fallbacks.slice(0, 3).map((p) => p.id);
-        }
+        const localMatches = matchProductsByKeywords(userMsg);
+        idMatches = localMatches.slice(0, 3).map((p) => p.id);
       }
 
       setMessages((prev) => [
         ...prev,
         {
           role: "model",
-          text: cleanText,
+          text: cleanText || "Here are matching dresses for you:",
           recommendedIds: idMatches.length > 0 ? idMatches : undefined,
         },
       ]);
@@ -143,18 +162,15 @@ HOW TO RESPOND:
         ...updatedHistory,
         { role: "model", parts: [{ text: rawReply }] },
       ]);
-    } catch (err: unknown) {
-      console.error("Gemini Stylist Error:", err);
-      // Even if network fails, fallback to local search
-      const localMatches = matchProductsByKeywords(userMsg).slice(0, 3);
+    } catch {
+      // Local fallback on API fail or timeout
+      const fallbacks = matchProductsByKeywords(userMsg).slice(0, 3);
       setMessages((prev) => [
         ...prev,
         {
           role: "model",
-          text: localMatches.length > 0
-            ? "Here are the best matching outfits from our collection for your request:"
-            : "I had trouble connecting. You can also chat with us directly on WhatsApp!",
-          recommendedIds: localMatches.length > 0 ? localMatches.map((p) => p.id) : undefined,
+          text: "Here are the best matching outfits from our collection:",
+          recommendedIds: fallbacks.map((p) => p.id),
         },
       ]);
     } finally {
@@ -188,7 +204,7 @@ HOW TO RESPOND:
           </button>
         </div>
 
-        {/* Message Thread */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-50/50 dark:bg-black/20">
           {messages.map((m, idx) => (
             <div key={idx} className="space-y-2">
@@ -202,9 +218,9 @@ HOW TO RESPOND:
                 <p className="whitespace-pre-line">{m.text}</p>
               </div>
 
-              {/* Recommended Product Cards Carousel/List */}
-              {m.recommendedIds && (
-                <div className="mr-auto w-full max-w-[95%] space-y-2 pt-1">
+              {/* Product Cards */}
+              {m.recommendedIds && m.recommendedIds.length > 0 && (
+                <div className="mr-auto w-full max-w-[96%] space-y-2 pt-1">
                   {m.recommendedIds.map((pId) => {
                     const prod = products.find((p) => p.id === pId);
                     if (!prod) return null;
@@ -268,13 +284,13 @@ HOW TO RESPOND:
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Bar */}
+        {/* Input Form */}
         <div className="border-t border-[var(--border)] bg-[var(--surface)] p-3 flex gap-2 items-center">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="e.g. 3 year old girl lehenga or kurta..."
+            placeholder="e.g. 4year, 3 year old girl lehenga..."
             className="flex-1 rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)] transition"
           />
           <button
