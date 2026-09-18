@@ -62,7 +62,7 @@ export function HomePage() {
                 Traditional kurtas, lehengas, and festive sets made for children. Lined with soft cotton so they stay comfortable all day.
               </p>
 
-              <div className="mt-10 flex flex-wrap items-center gap-5">
+              <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-5">
                 <Link
                   to="/shop"
                   className="group inline-flex items-center gap-3 rounded-full bg-[var(--accent-primary)] px-8 py-4 text-sm font-semibold text-black shadow-2xl transition-all hover:brightness-110 hover:scale-105 active:scale-95"
