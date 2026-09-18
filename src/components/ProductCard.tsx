@@ -30,6 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
     productName: product.name,
     size: product.sizes?.[0] ?? "Standard",
     price: product.price,
+    productId: product.id,
   });
 
   const displayDescription = getCardDescription(product.name, product.description);
@@ -81,7 +82,7 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
 
-          {/* Description - Simplified for readability audit */}
+          {/* Description */}
           <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)] font-light leading-relaxed min-h-[2.5rem]">
             {displayDescription}
           </p>

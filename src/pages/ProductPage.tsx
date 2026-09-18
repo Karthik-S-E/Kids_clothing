@@ -217,6 +217,7 @@ export function ProductPage() {
                 productName: itemTitle,
                 size,
                 price: product.price,
+                productId: product.id,
               })}
               target="_blank"
               rel="noreferrer"
