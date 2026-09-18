@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, User } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { useBrandStore } from "../store/brandStore";
 import { social } from "../config";
 
 interface HeaderProps {
@@ -30,14 +32,40 @@ export function Header({ onOpenCart }: HeaderProps) {
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  const { settings, fetchSettings } = useBrandStore();
+
+  useEffect(() => {
+    if (!settings.logoUrl) {
+      fetchSettings();
+    }
+  }, [settings.logoUrl, fetchSettings]);
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E2D9]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8E2D9]">
       <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
-        {/* Brand */}
-        <Link to="/" className="font-serif text-2xl tracking-tight text-[#281E15]">
-          Kandamma Kids
+        {/* Brand Logo & Name Stack */}
+        <Link to="/" className="flex items-center gap-3 group">
+          {settings.logoUrl ? (
+            <img
+              src={settings.logoUrl}
+              alt={settings.name}
+              className="h-10 w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0">
+              KK
+            </div>
+          )}
+          <div className="flex flex-col text-left justify-center">
+            <span className="font-serif text-xl tracking-tight text-[#281E15] leading-none">
+              {settings.name || "Kandamma Kids"}
+            </span>
+            <span className="text-[11px] font-medium text-[#786E64] tracking-normal mt-1 leading-none">
+              ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
+            </span>
+          </div>
         </Link>
 
         {/* Center Nav */}
@@ -79,6 +107,16 @@ export function Header({ onOpenCart }: HeaderProps) {
           >
             <InstagramIcon className="h-5 w-5" />
           </a>
+
+          {/* Admin Login Button */}
+          <Link
+            to="/admin/login"
+            className="hover:opacity-70 transition-opacity"
+            aria-label="Admin Login"
+            title="Admin Login"
+          >
+            <User className="h-5 w-5" />
+          </Link>
 
           {/* Cart Trigger */}
           <button
