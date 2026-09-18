@@ -24,6 +24,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const body: Record<string, unknown> = {
       contents: history,
+      generationConfig: {
+        maxOutputTokens: 120,
+        temperature: 0.6,
+      },
     };
 
     if (systemInstruction) {
