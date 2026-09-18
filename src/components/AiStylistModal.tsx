@@ -27,7 +27,7 @@ export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      text: "Namaste! I am your Kandamma Kids assistant. Tell me your child's age, gender, or festival you are shopping for!",
+      text: "Hi! How can I help you choose the right outfit today?",
     },
   ]);
 
@@ -61,15 +61,17 @@ export function AiStylistModal({ isOpen, onClose }: AiStylistModalProps) {
         )
         .join("\n");
 
-      const systemInstruction = `You are a helpful children's ethnic clothing assistant for "Kandamma Kids" in India.
-Current Inventory:
+      const systemInstruction = `You are a real, friendly stylist at Kandamma Kids boutique helping a customer in a live chat.
+
+Store Catalog:
 ${productCatalog || "No live products currently."}
 
-STRICT RESPONSE RULES:
-1. Speak in friendly, simple, direct English commonly used in India.
-2. DO NOT use confusing high-fashion words like "atelier", "curated masterpieces", or "concierge".
-3. Whenever you recommend an outfit from the inventory, include its exact ID in double curly brackets, e.g. {{ID:kk-peacock-kurta}}.
-4. Keep answers short, helpful, and under 3 sentences.`;
+CONVERSATION INSTRUCTIONS:
+- Talk like a warm, real person having a quick chat, NOT an AI or a bot.
+- Do NOT say formal repetitive greetings like "Hello! Are you looking for festive ethnic wear for Ugadi or a special occasion?".
+- Answer directly in 1 to 2 very short, natural sentences (under 30 words total).
+- If the customer asks for a recommendation or gives details (boy/girl, age, occasion), recommend 1 or 2 matching items from the catalog using format {{ID:product-id}}.
+- If you need details, ask just ONE simple question (e.g. "Is it for a boy or girl?" or "How old is your child?").`;
 
       const res = await fetch("/api/stylist", {
         method: "POST",
@@ -83,7 +85,7 @@ STRICT RESPONSE RULES:
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "API error");
 
-      const rawReply = data?.text || "I could not check right now. Please message us on WhatsApp!";
+      const rawReply = data?.text || "Let me know what you are looking for, or reach out to us directly on WhatsApp!";
       const idMatches = [...rawReply.matchAll(/\{\{ID:(.*?)\}\}/g)].map((m) => m[1].trim());
       const cleanText = rawReply.replace(/\{\{ID:.*?\}\}/g, "").trim();
 
@@ -122,8 +124,8 @@ STRICT RESPONSE RULES:
               <Bot className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-stone-900">Kandamma AI Assistant</h3>
-              <p className="text-[11px] text-stone-500">Ask for size or outfit suggestions</p>
+              <h3 className="font-semibold text-sm text-stone-900">Kandamma Assistant</h3>
+              <p className="text-[11px] text-stone-500">Live styling & size help</p>
             </div>
           </div>
           <button
@@ -191,7 +193,7 @@ STRICT RESPONSE RULES:
           {loading && (
             <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white border border-stone-200 px-3.5 py-2 text-xs text-stone-500">
               <Sparkles className="h-3.5 w-3.5 animate-spin text-amber-600" />
-              <span>Finding best matching outfits...</span>
+              <span>Checking collection...</span>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -203,7 +205,7 @@ STRICT RESPONSE RULES:
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type your question (e.g. 3 yr girl dress)..."
+            placeholder="Ask anything (e.g. dress for 4 yr old)..."
             className="flex-1 rounded-full border border-stone-300 bg-stone-50 px-4 py-2.5 text-xs text-stone-900 outline-none focus:border-stone-800 transition"
           />
           <button
