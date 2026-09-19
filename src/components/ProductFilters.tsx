@@ -23,14 +23,14 @@ export function ProductFilters({
   }, [products]);
 
   const availableAgeRanges = useMemo(() => {
-    const map = new Map<string, string>(); // normalised → original label
+    const map = new Map<string, string>();
     products.forEach((p) => {
       if (p.ageRange && p.ageRange.trim()) {
         const norm = normaliseAgeRange(p.ageRange);
         if (!map.has(norm)) map.set(norm, norm);
       }
     });
-    // Sort numerically by the low end of the range
+
     return Array.from(map.values()).sort((a, b) => {
       const aNum = parseInt(a, 10) || 0;
       const bNum = parseInt(b, 10) || 0;
@@ -38,90 +38,105 @@ export function ProductFilters({
     });
   }, [products]);
 
-  const hasActiveFilters = filters.gender !== "All" || filters.age !== "All";
+  const ageCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    availableAgeRanges.forEach((age) => {
+      map[age] = products.filter(
+        (p) => normaliseAgeRange(p.ageRange) === age
+      ).length;
+    });
+    return map;
+  }, [products, availableAgeRanges]);
 
   return (
-    <aside className="glass h-fit rounded-xl p-4 md:sticky md:top-24 border border-[var(--border)] space-y-4">
-      <div className="flex items-center justify-between border-b border-[var(--border)]/60 pb-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-          Filter Pieces
-        </span>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={() => onChange({ gender: "All", age: "All" })}
-            className="text-[10px] text-[var(--accent-primary)] hover:underline cursor-pointer"
-          >
-            Reset
-          </button>
-        )}
-      </div>
-
-      {/* Gender chips */}
-      <div>
-        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] block mb-1.5 font-medium">
+    <div className="w-full text-[#282c3f] divide-y divide-stone-200">
+      {/* 1. GENDER (Myntra-style Pink Radio List) */}
+      <div className="py-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#282c3f] mb-3">
           Gender
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {(["All", ...genders] as const).map((g) => {
-            const active = filters.gender === g;
-            return (
-              <button
-                key={g}
-                type="button"
-                onClick={() => onChange({ ...filters, gender: g })}
-                className={`rounded-full px-3 py-1 text-xs transition-all ${
-                  active
-                    ? "bg-[var(--accent-primary)] font-bold text-[var(--text-primary)] shadow-sm"
-                    : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
-                }`}
-              >
-                {g}
-                {g !== "All" ? ` (${counts[g]})` : ""}
-              </button>
-            );
-          })}
+        </h3>
+        <div className="space-y-2.5">
+          <label className="flex items-center gap-3 text-xs font-normal text-[#282c3f] cursor-pointer hover:text-black">
+            <input
+              type="radio"
+              name="filter-gender"
+              checked={filters.gender === "All"}
+              onChange={() => onChange({ ...filters, gender: "All" })}
+              className="h-4 w-4 accent-[#ff3f6c] cursor-pointer"
+            />
+            <span>All</span>
+          </label>
+
+          {(genders as readonly Gender[]).map((g) => (
+            <label
+              key={g}
+              className="flex items-center justify-between text-xs font-normal text-[#282c3f] cursor-pointer hover:text-black"
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="filter-gender"
+                  checked={filters.gender === g}
+                  onChange={() => onChange({ ...filters, gender: g })}
+                  className="h-4 w-4 accent-[#ff3f6c] cursor-pointer"
+                />
+                <span>{g === "Boy" ? "Boys" : "Girls"}</span>
+              </div>
+              <span className="text-[11px] text-[#94969f]">
+                ({counts[g] || 0})
+              </span>
+            </label>
+          ))}
         </div>
       </div>
 
-      {/* Age / Size Range chips */}
-      <div>
-        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] block mb-1.5 font-medium">
+      {/* 2. AGE / SIZE (Myntra-style Checkbox List with Counts) */}
+      <div className="py-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#282c3f] mb-3">
           Age / Size
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => onChange({ ...filters, age: "All" })}
-            className={`rounded-full px-3 py-1 text-xs transition-all ${
-              filters.age === "All"
-                ? "bg-[var(--accent-secondary)] font-bold text-white shadow-sm"
-                : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
-            }`}
-          >
-            All
-          </button>
+        </h3>
+        <div className="space-y-2.5">
+          <label className="flex items-center gap-3 text-xs font-normal text-[#282c3f] cursor-pointer hover:text-black">
+            <input
+              type="radio"
+              name="filter-age"
+              checked={filters.age === "All"}
+              onChange={() => onChange({ ...filters, age: "All" })}
+              className="h-4 w-4 accent-[#ff3f6c] cursor-pointer"
+            />
+            <span>All Sizes</span>
+          </label>
 
           {availableAgeRanges.map((a) => {
-            const active = filters.age === a;
+            const isChecked = filters.age === a;
             return (
-              <button
+              <label
                 key={a}
-                type="button"
-                onClick={() => onChange({ ...filters, age: a })}
-                className={`rounded-full px-3 py-1 text-xs transition-all ${
-                  active
-                    ? "bg-[var(--accent-secondary)] font-bold text-white shadow-sm"
-                    : "border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60"
-                }`}
+                className="flex items-center justify-between text-xs font-normal text-[#282c3f] cursor-pointer hover:text-black"
               >
-                {a}
-              </button>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() =>
+                      onChange({
+                        ...filters,
+                        age: isChecked ? "All" : a,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-stone-300 accent-[#ff3f6c] cursor-pointer"
+                  />
+                  <span>{a}</span>
+                </div>
+                <span className="text-[11px] text-[#94969f]">
+                  ({ageCounts[a] || 0})
+                </span>
+              </label>
             );
           })}
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
 

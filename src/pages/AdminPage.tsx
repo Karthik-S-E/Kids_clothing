@@ -1,6 +1,14 @@
-import { type FormEvent, useState, useEffect, useMemo } from "react";
+import { type FormEvent, useState, useEffect, useMemo, useRef } from "react";
 import { Navigate } from "react-router-dom";
-import { genders, ageRanges as defaultAgeRanges, type Gender, type Product, type ProductInput } from "../config";
+import { ChevronDown, Trash2 } from "lucide-react";
+import {
+  genders,
+  ageRanges as defaultAgeRanges,
+  normaliseAgeRange,
+  type Gender,
+  type Product,
+  type ProductInput,
+} from "../config";
 import { formatINR } from "../lib/formatINR";
 import { useAuthStore } from "../store/authStore";
 import { useProductStore } from "../store/productStore";
@@ -39,9 +47,21 @@ export function AdminPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [logoBusy, setLogoBusy] = useState(false);
 
-  const [customAgeInput, setCustomAgeInput] = useState("");
-  const [isCustomAgeMode, setIsCustomAgeMode] = useState(false);
-  const [customAgeList, setCustomAgeList] = useState<string[]>([]);
+  // Dynamic Age Range states
+  const [customAgeList, setCustomAgeList] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("kandamma_custom_age_ranges");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isAddingAge, setIsAddingAge] = useState(false);
+  const [newAgeStart, setNewAgeStart] = useState("");
+  const [newAgeEnd, setNewAgeEnd] = useState("");
+  const [ageError, setAgeError] = useState<string | null>(null);
+  const [ageDropdownOpen, setAgeDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -50,15 +70,88 @@ export function AdminPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const availableAgeRanges = useMemo(() => {
-    const set = new Set<string>([...defaultAgeRanges, ...customAgeList]);
-    products.forEach((p) => {
-      if (p.ageRange && p.ageRange.trim()) {
-        set.add(p.ageRange.trim());
+  // Close custom dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setAgeDropdownOpen(false);
       }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Combine and sort age ranges
+  const availableAgeRanges = useMemo(() => {
+    const combined = Array.from(new Set([...defaultAgeRanges, ...customAgeList]));
+    return combined.sort((a, b) => {
+      const numA = parseInt(a, 10) || 0;
+      const numB = parseInt(b, 10) || 0;
+      return numA - numB;
     });
-    return Array.from(set);
-  }, [products, customAgeList]);
+  }, [customAgeList]);
+
+  // Live Size Validator (<NUM>Y or comma-separated)
+  const sizeValidation = useMemo(() => {
+    if (!rawSizes.trim()) return { isValid: true, error: "" };
+    const sizeRegex = /^\d+Y$/i;
+    const splitSizes = rawSizes
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const invalid = splitSizes.filter((s) => !sizeRegex.test(s));
+    if (invalid.length > 0) {
+      return {
+        isValid: false,
+        error: `"${invalid.join(", ")}" is invalid. Sizes must strictly be in format <NUM>Y (e.g. 2Y or 2Y, 3Y).`,
+      };
+    }
+    return { isValid: true, error: "" };
+  }, [rawSizes]);
+
+  function saveCustomAges(updated: string[]) {
+    setCustomAgeList(updated);
+    localStorage.setItem("kandamma_custom_age_ranges", JSON.stringify(updated));
+  }
+
+  function handleAddAgeRange() {
+    setAgeError(null);
+    const start = parseInt(newAgeStart, 10);
+    const end = parseInt(newAgeEnd, 10);
+
+    if (isNaN(start) || isNaN(end)) {
+      setAgeError("Please enter valid start and end age numbers.");
+      return;
+    }
+
+    if (start < 0 || end <= start) {
+      setAgeError("End age must be greater than start age.");
+      return;
+    }
+
+    const formatted = `${start}-${end} Years`;
+    if (availableAgeRanges.includes(formatted)) {
+      setAgeError("This age range already exists.");
+      return;
+    }
+
+    const updated = [...customAgeList, formatted];
+    saveCustomAges(updated);
+    setForm((f) => ({ ...f, ageRange: formatted }));
+    setNewAgeStart("");
+    setNewAgeEnd("");
+    setIsAddingAge(false);
+  }
+
+  function handleDeleteAgeRange(ageToDelete: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const updated = customAgeList.filter((a) => a !== ageToDelete);
+    saveCustomAges(updated);
+    if (form.ageRange === ageToDelete) {
+      setForm((f) => ({ ...f, ageRange: "" }));
+    }
+  }
 
   if (loading) {
     return (
@@ -127,7 +220,7 @@ export function AdminPage() {
       image: product.image,
       price: product.price,
       gender: product.gender,
-      ageRange: product.ageRange,
+      ageRange: normaliseAgeRange(product.ageRange),
       description: product.description,
       sizes: product.sizes || [],
       stockStatus: product.stockStatus ?? true,
@@ -142,8 +235,6 @@ export function AdminPage() {
     });
     setRawSizes((product.sizes || []).join(", ").toUpperCase());
     setEditingId(product.id);
-    setIsCustomAgeMode(false);
-    setCustomAgeInput("");
     setMsg(null);
     setValidationErrors([]);
   }
@@ -152,8 +243,6 @@ export function AdminPage() {
     setForm(empty);
     setRawSizes("");
     setEditingId(null);
-    setIsCustomAgeMode(false);
-    setCustomAgeInput("");
     setMsg(null);
     setValidationErrors([]);
   }
@@ -164,12 +253,16 @@ export function AdminPage() {
     if (!form.image) errors.push("Product image is required (upload or URL).");
     if (!form.description.trim()) errors.push("Description is required.");
     if (form.price <= 0) errors.push("Price must be greater than zero.");
-    if (!form.ageRange.trim()) errors.push("Age range is required.");
-    const parsedSizes = rawSizes
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (parsedSizes.length === 0) errors.push("At least one size is required.");
+    if (!form.ageRange || !form.ageRange.trim()) {
+      errors.push("Age range is required. Please choose one from the dropdown.");
+    }
+
+    if (!rawSizes.trim()) {
+      errors.push("At least one size is required (e.g. 2Y or 2Y, 3Y).");
+    } else if (!sizeValidation.isValid) {
+      errors.push(sizeValidation.error);
+    }
+
     return errors;
   }
 
@@ -211,8 +304,8 @@ export function AdminPage() {
 
       const payload: ProductInput = {
         ...form,
-        ageRange: form.ageRange.trim() || "All Ages",
-        sizes: parsedSizes.length > 0 ? parsedSizes : ["Standard"],
+        ageRange: normaliseAgeRange(form.ageRange),
+        sizes: parsedSizes,
         stockQuantity: Number(form.stockQuantity) || 0,
       };
 
@@ -227,8 +320,6 @@ export function AdminPage() {
 
       setForm(empty);
       setRawSizes("");
-      setIsCustomAgeMode(false);
-      setCustomAgeInput("");
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -450,97 +541,125 @@ export function AdminPage() {
                 </select>
               </label>
 
-              <div className="block text-sm">
+              {/* DYNAMIC AGE RANGE CUSTOM DROPDOWN WITH VISIBLE TEXT & INLINE DELETE */}
+              <div className="block text-sm relative" ref={dropdownRef}>
                 <div className="flex items-center justify-between">
                   <span>Age Range / Group</span>
                   <button
                     type="button"
                     onClick={() => {
-                      setIsCustomAgeMode(!isCustomAgeMode);
-                      setCustomAgeInput("");
+                      setIsAddingAge(!isAddingAge);
+                      setAgeError(null);
                     }}
                     className="text-xs font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
                   >
-                    {isCustomAgeMode ? "← Choose existing" : "+ Custom age"}
+                    {isAddingAge ? "Close" : "+ New Range"}
                   </button>
                 </div>
 
-                {!isCustomAgeMode ? (
-                  <select
-                    required
-                    value={form.ageRange}
-                    onChange={(e) => {
-                      if (e.target.value === "CUSTOM_MODE") {
-                        setIsCustomAgeMode(true);
-                      } else {
-                        setForm({ ...form, ageRange: e.target.value });
-                      }
-                    }}
-                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
-                  >
-                    <option value="" className="bg-zinc-900 text-white">
-                      Select age range
-                    </option>
-                    {availableAgeRanges.map((a) => (
-                      <option key={a} value={a} className="bg-zinc-900 text-white">
-                        {a}
-                      </option>
-                    ))}
-                    <option value="CUSTOM_MODE" className="bg-zinc-900 text-[var(--accent-primary)] font-bold">
-                      + Add custom range...
-                    </option>
-                  </select>
+                {!isAddingAge ? (
+                  <div className="relative mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setAgeDropdownOpen(!ageDropdownOpen)}
+                      className="w-full flex items-center justify-between rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 text-left outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+                    >
+                      <span className={form.ageRange ? "text-stone-900 font-medium" : "text-stone-400"}>
+                        {form.ageRange || "Select age range"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-stone-500" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {ageDropdownOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-stone-700 bg-zinc-900 shadow-2xl custom-scrollbar">
+                        {availableAgeRanges.map((a) => {
+                          const isCustom = customAgeList.includes(a);
+                          const isSelected = form.ageRange === a;
+
+                          return (
+                            <div
+                              key={a}
+                              onClick={() => {
+                                setForm((f) => ({ ...f, ageRange: a }));
+                                setAgeDropdownOpen(false);
+                              }}
+                              className={`flex items-center justify-between px-3.5 py-2.5 text-xs font-medium cursor-pointer transition-colors ${
+                                isSelected ? "bg-amber-600 text-white" : "text-stone-200 hover:bg-zinc-800"
+                              }`}
+                            >
+                              <span>{a}</span>
+
+                              {isCustom && (
+                                <button
+                                  type="button"
+                                  title="Delete this age range"
+                                  onClick={(e) => handleDeleteAgeRange(a, e)}
+                                  className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      autoFocus
-                      value={customAgeInput}
-                      onChange={(e) => setCustomAgeInput(e.target.value)}
-                      placeholder="e.g. 9-12 Years, 12-15 Years"
-                      className="w-full rounded-xl border border-[var(--accent-primary)] bg-transparent px-4 py-2.5 text-xs focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const trimmed = customAgeInput.trim();
-                        if (trimmed) {
-                          if (!customAgeList.includes(trimmed)) {
-                            setCustomAgeList((prev) => [...prev, trimmed]);
-                          }
-                          setForm({ ...form, ageRange: trimmed });
-                        }
-                        setIsCustomAgeMode(false);
-                        setCustomAgeInput("");
-                      }}
-                      className="shrink-0 btn-admin-sm"
-                    >
-                      Set
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCustomAgeMode(false);
-                        setCustomAgeInput("");
-                      }}
-                      className="shrink-0 btn-admin-sm"
-                    >
-                      Cancel
-                    </button>
+                  <div className="mt-1 space-y-2 rounded-xl border border-[var(--accent-primary)]/40 p-2.5 bg-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        placeholder="From (e.g. 13)"
+                        value={newAgeStart}
+                        onChange={(e) => setNewAgeStart(e.target.value)}
+                        className="w-1/2 rounded-lg border border-[var(--border)] bg-transparent px-2.5 py-1.5 text-xs outline-none focus:border-[var(--accent-primary)]"
+                      />
+                      <span className="text-xs text-stone-400">-</span>
+                      <input
+                        type="number"
+                        placeholder="To (e.g. 15)"
+                        value={newAgeEnd}
+                        onChange={(e) => setNewAgeEnd(e.target.value)}
+                        className="w-1/2 rounded-lg border border-[var(--border)] bg-transparent px-2.5 py-1.5 text-xs outline-none focus:border-[var(--accent-primary)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddAgeRange}
+                        className="btn-admin-sm shrink-0"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {ageError && <p className="text-[11px] text-red-400">{ageError}</p>}
                   </div>
                 )}
               </div>
             </div>
 
+            {/* SIZES INPUT WITH LIVE INLINE VALIDATION */}
             <label className="block text-sm">
-              Sizes (comma separated)
+              <div className="flex items-center justify-between">
+                <span>Sizes (format: 2Y or 2Y, 3Y, 4Y)</span>
+                <span className="text-[11px] text-[var(--accent-primary)] font-mono">Format: &lt;NUM&gt;Y</span>
+              </div>
               <input
                 required
                 value={rawSizes}
                 onChange={(e) => setRawSizes(e.target.value.toUpperCase())}
-                placeholder="2Y, 3Y, 4Y, 5Y"
-                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none uppercase"
+                placeholder="e.g. 2Y or 2Y, 3Y, 4Y"
+                className={`mt-1 w-full rounded-xl border bg-transparent px-4 py-3 outline-none uppercase font-mono transition-colors ${
+                  !sizeValidation.isValid
+                    ? "border-red-500 focus:border-red-500 bg-red-500/10 text-red-600 font-semibold"
+                    : "border-[var(--border)] focus:border-[var(--accent-primary)]"
+                }`}
               />
+              {!sizeValidation.isValid && (
+                <p className="mt-1.5 text-xs text-red-500 font-medium">
+                  {sizeValidation.error}
+                </p>
+              )}
             </label>
 
             <label className="block text-sm">
@@ -597,8 +716,8 @@ export function AdminPage() {
               )}
               <button
                 type="submit"
-                disabled={busy || !form.image}
-                className="flex-1 btn-admin-primary"
+                disabled={busy || !form.image || !sizeValidation.isValid}
+                className="flex-1 btn-admin-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy ? "Saving..." : editingId ? "Update piece" : "Publish piece"}
               </button>
@@ -618,7 +737,7 @@ export function AdminPage() {
                   <p className="line-clamp-2 font-medium">{p.name}</p>
                   <p className="text-sm text-[var(--accent-primary)]">{formatINR(p.price)}</p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {p.ageRange} · Sizes: {(p.sizes || []).join(", ")}
+                    {normaliseAgeRange(p.ageRange)} · Sizes: {(p.sizes || []).join(", ")}
                     {p.designNo && ` · #${p.designNo}`}
                     {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
                   </p>

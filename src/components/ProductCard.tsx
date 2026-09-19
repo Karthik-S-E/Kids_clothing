@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, ArrowRight } from "lucide-react";
-import type { Product } from "../config";
+import { normaliseAgeRange, type Product } from "../config";
 import { formatINR } from "../lib/formatINR";
 import { whatsappOrderUrl } from "../lib/whatsapp";
 
@@ -34,82 +34,86 @@ export function ProductCard({ product }: { product: Product }) {
   });
 
   const displayDescription = getCardDescription(product.name, product.description);
+  const displayAge = normaliseAgeRange(product.ageRange);
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="group relative flex flex-col h-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-2xl hover:border-[var(--accent-primary)]/40 overflow-hidden"
+      transition={{ duration: 0.3 }}
+      className="group relative flex flex-col h-full rounded-xl border border-stone-200/80 bg-white shadow-xs transition-all duration-200 hover:shadow-md hover:border-stone-300 overflow-hidden"
     >
-      {/* 1. Fixed Aspect Ratio Image Banner */}
-      <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-black/5 dark:bg-black/20">
-        <Link to={`/shop/${product.id}`} className="block h-full w-full">
-          <img
-            src={product.image}
-            alt={product.name}
-            className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 ${
-              !inStock ? "grayscale opacity-50" : ""
-            }`}
-          />
-        </Link>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
-
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-white backdrop-blur-md">
-            {product.gender}
+      <Link
+        to={`/shop/${product.id}`}
+        className="relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-stone-100 block"
+      >
+        <img
+          src={product.image}
+          alt={product.name}
+          loading="lazy"
+          className={`h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105 ${
+            !inStock ? "grayscale opacity-50" : ""
+          }`}
+        />
+        {!inStock && (
+          <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-[2px]">
+            Out of Stock
           </span>
-          {product.ageRange && (
-            <span className="rounded-full bg-[var(--accent-primary)] px-3 py-1 text-xs font-bold text-[var(--text-primary)] backdrop-blur-md">
-              {product.ageRange}
-            </span>
-          )}
-        </div>
-      </div>
+        )}
+      </Link>
 
-      {/* 2. Structured Card Body */}
-      <div className="flex flex-1 flex-col justify-between p-5">
+      <div className="flex flex-1 flex-col justify-between p-4">
         <div>
-          {/* Title and Price */}
-          <div className="flex items-start justify-between gap-2 min-h-[3rem]">
-            <Link to={`/shop/${product.id}`} className="hover:text-[var(--accent-primary)] transition-colors flex-1">
-              <h2 className="font-display text-lg font-semibold leading-snug tracking-tight text-[var(--text-primary)] line-clamp-2">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <span className="inline-block rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#282c3f]">
+              {product.gender}
+            </span>
+            {displayAge && (
+              <span className="inline-block rounded border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
+                {displayAge}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-start justify-between gap-2 min-h-[2.5rem]">
+            <Link
+              to={`/shop/${product.id}`}
+              className="hover:text-amber-800 transition-colors flex-1"
+            >
+              <h2 className="text-xs sm:text-sm font-bold leading-tight text-[#282c3f] line-clamp-2">
                 {product.name}
               </h2>
             </Link>
-            <span className="shrink-0 text-base font-bold text-[var(--accent-primary)]">
+            <span className="shrink-0 text-sm sm:text-base font-extrabold text-[#282c3f]">
               {formatINR(product.price)}
             </span>
           </div>
 
-          {/* Description */}
-          <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)] font-light leading-relaxed min-h-[2.5rem]">
+          <p className="mt-1.5 line-clamp-2 text-[11px] text-[#696b79] leading-relaxed min-h-[2rem]">
             {displayDescription}
           </p>
 
-          {/* Sizes Badges */}
-          <div className="mt-3 flex flex-wrap gap-1.5 min-h-[1.5rem]">
+          <div className="mt-3 flex flex-wrap gap-1 min-h-[1.5rem]">
             {(product.sizes || []).slice(0, 4).map((s) => (
               <span
                 key={s}
-                className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-0.5 text-xs uppercase font-mono text-[var(--text-secondary)]"
+                className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-medium text-stone-600"
               >
                 {s}
               </span>
             ))}
             {(product.sizes || []).length > 4 && (
-              <span className="text-xs text-[var(--text-secondary)] self-center">
+              <span className="text-[10px] text-stone-400 self-center">
                 +{(product.sizes || []).length - 4} more
               </span>
             )}
           </div>
         </div>
 
-        {/* 3. Pinned Bottom Actions */}
-        <div className="mt-5 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
+        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
           <Link
             to={`/shop/${product.id}`}
-            className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors inline-flex items-center gap-1 shrink-0"
+            className="text-[11px] font-bold uppercase tracking-wider text-stone-600 hover:text-stone-950 transition-colors inline-flex items-center gap-1 shrink-0"
           >
             Details <ArrowRight className="h-3 w-3" />
           </Link>
@@ -118,9 +122,9 @@ export function ProductCard({ product }: { product: Product }) {
             href={orderUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white shadow-md hover:bg-[#20ba59] transition-all"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-[11px] font-bold tracking-wide text-white shadow-xs hover:bg-[#20ba59] active:scale-95 transition-all"
           >
-            <MessageCircle className="h-3.5 w-3.5" /> Order via WhatsApp
+            <MessageCircle className="h-3.5 w-3.5 fill-current" /> Order via WhatsApp
           </a>
         </div>
       </div>

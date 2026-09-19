@@ -12,14 +12,28 @@ export const social = {
 } as const;
 
 export const genders = ["Boy", "Girl"] as const;
-export const ageRanges = ["1-4 Years", "2-5 Years", "4-8 Years", "5-8 Years"];
+
+export const ageRanges = [
+  "0-1 Years",
+  "1-2 Years",
+  "2-3 Years",
+  "2-5 Years",
+  "3-4 Years",
+  "4-5 Years",
+  "4-8 Years",
+  "5-8 Years",
+  "6-9 Years",
+  "8-12 Years",
+] as const;
 
 export type Gender = (typeof genders)[number];
 export type AgeRange = string;
 
-export function normaliseAgeRange(raw: string): string {
+export function normaliseAgeRange(raw?: string): string {
+  if (!raw) return "";
   const cleaned = raw.replace(/\s+/g, " ").trim();
-  const match = cleaned.match(/(\d+)\s*[-–]\s*(\d+)/);
+  // Catches 4-8, 4y-8y, 4Y - 8Y, 4-8 Years, etc.
+  const match = cleaned.match(/(\d+)\s*(?:[yY]|years?|yrs?)?\s*[-–]\s*(\d+)\s*(?:[yY]|years?|yrs?)?/i);
   if (!match) return cleaned;
   const low = Number(match[1]);
   const high = Number(match[2]);
