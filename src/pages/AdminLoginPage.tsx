@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
+const ADMIN_EMAIL = "kandammakids@gmail.com";
+
 export function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,24 +15,33 @@ export function AdminLoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // 1. Instantly reject unauthorized accounts
+    if (trimmedEmail !== ADMIN_EMAIL.toLowerCase()) {
+      setError("Access denied. This account does not have administrative privileges.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      await signInWithEmailAndPassword(auth, trimmedEmail, password);
       navigate("/admin");
     } catch (err: any) {
-      // Displays the exact Firebase Auth error code
-      console.error("Firebase Login Error:", err);
+      console.error("Login attempt failed:", err);
       const code = err?.code || "";
-      
+
+      // 2. Production-safe error copy
       if (code === "auth/invalid-credential" || code === "auth/wrong-password") {
-        setError("Wrong password entered. Please reset it in Firebase Console.");
+        setError("Invalid email or password. Please verify and try again.");
       } else if (code === "auth/user-not-found") {
-        setError("Email not found in Firebase Authentication.");
+        setError("Account not found. Please check the email address.");
       } else if (code === "auth/too-many-requests") {
-        setError("Too many failed attempts. Please wait a few minutes.");
+        setError("Too many failed attempts. Please try again after a few minutes.");
       } else {
-        setError(err.message || "Failed to sign in.");
+        setError("Unable to sign in. Please check your credentials.");
       }
     } finally {
       setLoading(false);
@@ -53,7 +64,7 @@ export function AdminLoginPage() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-500">
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-500 text-center">
             {error}
           </div>
         )}
@@ -90,7 +101,7 @@ export function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-admin-primary mt-2 flex items-center justify-center"
+            className="w-full btn-admin-primary mt-2 flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
             {loading ? "Authenticating..." : "Sign In"}
           </button>

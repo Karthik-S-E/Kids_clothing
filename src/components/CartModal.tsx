@@ -3,12 +3,58 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "../store/cartStore";
 import { formatINR } from "../lib/formatINR";
 import { whatsappCartUrl } from "../lib/whatsapp";
+import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "../lib/firebase";
 
 export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
 
-  const handleCheckout = () => {
-    const url = whatsappCartUrl(items);
+  const handleCheckout = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please sign in first so your order can be saved to your account!");
+      return;
+    }
+
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const orderId = `KK-${randomNum}`;
+    const totalPrice = getTotalPrice();
+
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      await setDoc(orderRef, {
+        orderId: orderId,
+        orderNumber: orderId,
+        userId: user.uid,
+        userEmail: user.email || "",
+        userName: user.displayName || "Customer",
+        items: items.map((item) => ({
+          productId: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          size: item.size,
+          quantity: item.quantity,
+          image: item.product.image,
+        })),
+        totalAmount: totalPrice,
+        status: "Confirmed",
+        delivery: {
+          customerName: user.displayName || "Customer",
+          phone: "9999999999",
+          address: "Registered Address",
+          city: "Tarikere",
+          pincode: "577228",
+        },
+        createdAt: serverTimestamp(),
+      });
+      console.log("SUCCESSFULLY SAVED CART ORDER:", orderId);
+    } catch (err: any) {
+      console.error("FIRESTORE WRITE FAILED:", err);
+      alert("Database error: " + (err.message || "Could not save order. Check Firestore rules."));
+    }
+
+    const url = whatsappCartUrl(items, orderId);
     window.open(url, "_blank");
     clearCart();
     onClose();
@@ -37,7 +83,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <h2 className="font-display text-3xl">Your Bag</h2>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 hover:bg-[var(--border)] transition-colors"
+                  className="rounded-full p-2 hover:bg-[var(--border)] transition-colors cursor-pointer"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -74,7 +120,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity - 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors"
+                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
                             >
                               -
                             </button>
@@ -83,13 +129,13 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity + 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors"
+                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
                             >
                               +
                             </button>
                             <button
                               onClick={() => removeItem(item.product.id, item.size)}
-                              className="ml-auto text-sm text-red-400 hover:text-red-300"
+                              className="ml-auto text-sm text-red-400 hover:text-red-300 cursor-pointer"
                             >
                               Remove
                             </button>
@@ -109,13 +155,13 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   </div>
                   <button
                     onClick={handleCheckout}
-                    className="w-full rounded-full bg-[#25D366] py-3 text-sm font-semibold uppercase tracking-widest text-white whatsapp-glow"
+                    className="w-full rounded-full bg-[#25D366] py-3 text-sm font-semibold uppercase tracking-widest text-white whatsapp-glow cursor-pointer"
                   >
                     Checkout via WhatsApp
                   </button>
                   <button
                     onClick={clearCart}
-                    className="w-full rounded-full border border-[var(--border)] py-3 text-sm font-medium uppercase tracking-widest hover:border-red-400 hover:text-red-400 transition-colors"
+                    className="w-full rounded-full border border-[var(--border)] py-3 text-sm font-medium uppercase tracking-widest hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"
                   >
                     Clear Bag
                   </button>
@@ -128,3 +174,5 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     </AnimatePresence>
   );
 }
+
+export default CartModal;

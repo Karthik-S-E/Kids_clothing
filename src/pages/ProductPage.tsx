@@ -18,6 +18,8 @@ import { whatsappOrderUrl } from "../lib/whatsapp";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
+import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "../lib/firebase";
 
 export function ProductPage() {
   const { id } = useParams();
@@ -83,6 +85,65 @@ export function ProductPage() {
     addItemToCart(product, size || product.sizes[0] || "Standard");
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2200);
+  };
+
+  const handleWhatsAppOrderClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please sign in first so your order can be saved to your account!");
+      return;
+    }
+
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const orderId = `KK-${randomNum}`;
+    const selectedSize = size || product.sizes[0] || "Standard";
+
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      await setDoc(orderRef, {
+        orderId: orderId,
+        orderNumber: orderId,
+        userId: user.uid,
+        userEmail: user.email || "",
+        userName: user.displayName || "Customer",
+        items: [
+          {
+            productId: product.id,
+            name: itemTitle,
+            price: product.price,
+            size: selectedSize,
+            quantity: 1,
+            image: activeImage,
+          },
+        ],
+        totalAmount: product.price,
+        status: "Confirmed",
+        delivery: {
+          customerName: user.displayName || "Customer",
+          phone: "9999999999",
+          address: "Registered Address",
+          city: "Tarikere",
+          pincode: "577228",
+        },
+        createdAt: serverTimestamp(),
+      });
+      console.log("SUCCESSFULLY SAVED PRODUCT PAGE ORDER:", orderId);
+    } catch (err: any) {
+      console.error("FIRESTORE WRITE FAILED:", err);
+      alert("Database error: " + (err.message || "Could not save order. Check Firestore rules."));
+    }
+
+    const customOrderUrl = whatsappOrderUrl({
+      orderId,
+      productName: itemTitle,
+      size: selectedSize,
+      price: product.price,
+      productId: product.id,
+    });
+
+    window.open(customOrderUrl, "_blank", "noreferrer");
   };
 
   const handlePincodeCheck = (e: React.FormEvent) => {
@@ -151,7 +212,7 @@ export function ProductPage() {
                     key={clr}
                     type="button"
                     onClick={() => setSelectedColor(clr)}
-                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all ${
+                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all cursor-pointer ${
                       isSelected ? "border-[#ff3e6c] ring-2 ring-[#ff3e6c]/30" : "border-stone-300 hover:border-stone-700"
                     }`}
                   >
@@ -220,7 +281,7 @@ export function ProductPage() {
                       role="radio"
                       aria-checked={isSelected}
                       onClick={() => setSelectedColor(clr)}
-                      className={`group relative h-16 w-12 overflow-hidden rounded border transition-all ${
+                      className={`group relative h-16 w-12 overflow-hidden rounded border transition-all cursor-pointer ${
                         isSelected 
                           ? "border-2 border-[#ff3e6c] ring-2 ring-[#ff3e6c]/40" 
                           : "border-stone-300 hover:border-stone-800"
@@ -248,7 +309,7 @@ export function ProductPage() {
               <button
                 type="button"
                 onClick={() => setSizeChartOpen(true)}
-                className="text-xs font-bold uppercase tracking-wider text-[#ff3e6c] hover:underline"
+                className="text-xs font-bold uppercase tracking-wider text-[#ff3e6c] hover:underline cursor-pointer"
               >
                 Size Chart &gt;
               </button>
@@ -296,7 +357,7 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Action Buttons: 2-Tier Balanced Layout */}
+          {/* Action Buttons */}
           <div className="flex flex-col gap-2.5 pt-2">
             <div className="grid grid-cols-2 gap-2.5 w-full">
               {inStock ? (
@@ -304,7 +365,7 @@ export function ProductPage() {
                   <button
                     type="button"
                     onClick={handleAddToBag}
-                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#ff3e6c] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#e7335e] active:scale-[0.98]"
+                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#ff3e6c] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#e7335e] active:scale-[0.98] cursor-pointer"
                   >
                     {addedFeedback ? (
                       <>
@@ -318,15 +379,11 @@ export function ProductPage() {
                   </button>
 
                   <a
-                    href={whatsappOrderUrl({
-                      productName: itemTitle,
-                      size,
-                      price: product.price,
-                      productId: product.id,
-                    })}
+                    href="#order"
+                    onClick={handleWhatsAppOrderClick}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#20bd5a] active:scale-[0.98]"
+                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#20bd5a] active:scale-[0.98] cursor-pointer"
                   >
                     <MessageCircle className="h-4 w-4" /> Order via WhatsApp
                   </a>
@@ -345,7 +402,7 @@ export function ProductPage() {
             <button
               type="button"
               onClick={() => toggleWishlist(product)}
-              className={`flex h-11 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-colors active:scale-[0.98] ${
+              className={`flex h-11 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-colors active:scale-[0.98] cursor-pointer ${
                 isWishlisted
                   ? "border-[#ff3e6c] text-[#ff3e6c] bg-[#fff0f3]"
                   : "border-stone-300 text-stone-800 bg-white hover:border-stone-800 hover:bg-stone-50"
@@ -399,7 +456,7 @@ export function ProductPage() {
               />
               <button
                 type="submit"
-                className="rounded px-4 py-2 text-xs font-bold uppercase text-[#ff3e6c] hover:bg-[#ff3e6c]/10 transition"
+                className="rounded px-4 py-2 text-xs font-bold uppercase text-[#ff3e6c] hover:bg-[#ff3e6c]/10 transition cursor-pointer"
               >
                 Check
               </button>
@@ -466,7 +523,7 @@ export function ProductPage() {
               <button
                 type="button"
                 onClick={() => setSizeChartOpen(false)}
-                className="rounded-full p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+                className="rounded-full p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -496,7 +553,7 @@ export function ProductPage() {
               <button
                 type="button"
                 onClick={() => setSizeChartOpen(false)}
-                className="rounded bg-[#ff3e6c] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#e7335e]"
+                className="rounded bg-[#ff3e6c] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#e7335e] cursor-pointer"
               >
                 Got It
               </button>
@@ -507,3 +564,5 @@ export function ProductPage() {
     </main>
   );
 }
+
+export default ProductPage;
