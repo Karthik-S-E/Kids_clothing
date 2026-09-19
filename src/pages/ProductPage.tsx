@@ -58,9 +58,12 @@ export function ProductPage() {
   const activeImage =
     (selectedColor && product.colorImages?.[selectedColor]) || product.image;
 
-  // Compute MRP and Discount markup for Myntra pricing style
-  const mrp = Math.round(product.price * 1.45);
-  const discountPercent = Math.round(((mrp - product.price) / mrp) * 100);
+  // Dynamic MRP and Discount percentage calculation from admin inputs
+  const discountPercent = Number(product.discountPercent) || 0;
+  const hasDiscount = discountPercent > 0 && discountPercent < 100;
+  const mrp = hasDiscount
+    ? Math.round(product.price / (1 - discountPercent / 100))
+    : product.price;
 
   const itemTitle = [
     product.name,
@@ -126,7 +129,7 @@ export function ProductPage() {
             )}
           </div>
 
-          {/* Alternate Color Image Previews (Only shows distinct color shots) */}
+          {/* Alternate Color Image Previews */}
           {availableColors.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
               {availableColors.map((clr) => {
@@ -149,7 +152,7 @@ export function ProductPage() {
           )}
         </section>
 
-        {/* 3. Product Details Panel with Solid High Contrast */}
+        {/* 3. Product Details Panel */}
         <section aria-label="Product Purchasing Options" className="lg:col-span-6 flex flex-col gap-6 bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm">
           {/* Header & Ratings */}
           <div className="border-b border-stone-200 pb-4">
@@ -165,18 +168,22 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Pricing Block with Sharp Contrast */}
+          {/* Pricing Block with Dynamic Admin Discount */}
           <div className="flex flex-col gap-1 border-b border-stone-200 pb-4">
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-extrabold text-stone-900">
                 {formatINR(product.price)}
               </span>
-              <span className="text-base text-stone-500 line-through font-medium">
-                MRP {formatINR(mrp)}
-              </span>
-              <span className="text-base font-bold text-amber-700">
-                ({discountPercent}% OFF)
-              </span>
+              {hasDiscount && (
+                <>
+                  <span className="text-base text-stone-500 line-through font-medium">
+                    MRP {formatINR(mrp)}
+                  </span>
+                  <span className="text-base font-bold text-amber-700">
+                    ({discountPercent}% OFF)
+                  </span>
+                </>
+              )}
             </div>
             <span className="text-xs font-bold text-[#03a685] tracking-wide uppercase">
               inclusive of all taxes

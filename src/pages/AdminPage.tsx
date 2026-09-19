@@ -18,6 +18,7 @@ const empty: ProductInput = {
   name: "",
   image: "",
   price: 499,
+  discountPercent: 20,
   gender: "Girl",
   ageRange: "",
   description: "",
@@ -90,6 +91,14 @@ export function AdminPage() {
       return numA - numB;
     });
   }, [customAgeList]);
+
+  // Live calculated MRP preview for the form
+  const calculatedMrp = useMemo(() => {
+    const p = Number(form.price) || 0;
+    const d = Number(form.discountPercent) || 0;
+    if (p <= 0 || d <= 0 || d >= 100) return p;
+    return Math.round(p / (1 - d / 100));
+  }, [form.price, form.discountPercent]);
 
   // Live Size Validator (<NUM>Y or comma-separated)
   const sizeValidation = useMemo(() => {
@@ -219,6 +228,7 @@ export function AdminPage() {
       name: product.name,
       image: product.image,
       price: product.price,
+      discountPercent: product.discountPercent ?? 0,
       gender: product.gender,
       ageRange: normaliseAgeRange(product.ageRange),
       description: product.description,
@@ -253,6 +263,9 @@ export function AdminPage() {
     if (!form.image) errors.push("Product image is required (upload or URL).");
     if (!form.description.trim()) errors.push("Description is required.");
     if (form.price <= 0) errors.push("Price must be greater than zero.");
+    if ((form.discountPercent ?? 0) < 0 || (form.discountPercent ?? 0) >= 100) {
+      errors.push("Discount percentage must be between 0 and 99.");
+    }
     if (!form.ageRange || !form.ageRange.trim()) {
       errors.push("Age range is required. Please choose one from the dropdown.");
     }
@@ -304,6 +317,7 @@ export function AdminPage() {
 
       const payload: ProductInput = {
         ...form,
+        discountPercent: Number(form.discountPercent) || 0,
         ageRange: normaliseAgeRange(form.ageRange),
         sizes: parsedSizes,
         stockQuantity: Number(form.stockQuantity) || 0,
@@ -513,17 +527,56 @@ export function AdminPage() {
               <img src={form.image} alt="" className="h-28 w-28 rounded-xl object-cover border border-[var(--border)]" />
             )}
 
-            <label className="block text-sm">
-              Price (₹)
-              <input
-                required
-                type="number"
-                min={1}
-                value={form.price === 0 ? "" : form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : Number(e.target.value) })}
-                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
-              />
-            </label>
+            {/* PRICING & DYNAMIC DISCOUNT PERCENTAGE INPUTS */}
+            <div className="rounded-xl border border-[var(--border)] bg-white/5 p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm">
+                  Selling Price (₹)
+                  <input
+                    required
+                    type="number"
+                    min={1}
+                    value={form.price === 0 ? "" : form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : Number(e.target.value) })}
+                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none"
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  Offer / Discount %
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={form.discountPercent ?? 0}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        discountPercent: Math.min(99, Math.max(0, Number(e.target.value) || 0)),
+                      })
+                    }
+                    placeholder="e.g. 20 (0 for no offer)"
+                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-3 focus:border-[var(--accent-primary)] outline-none font-medium"
+                  />
+                </label>
+              </div>
+
+              {/* Dynamic Live Price Preview Badge */}
+              <div className="flex items-center justify-between rounded-lg bg-stone-900/40 px-3.5 py-2 text-xs">
+                <span className="text-stone-400">Storefront preview:</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-extrabold text-white text-sm">{formatINR(form.price)}</span>
+                  {(form.discountPercent ?? 0) > 0 ? (
+                    <>
+                      <span className="text-stone-400 line-through">MRP {formatINR(calculatedMrp)}</span>
+                      <span className="font-bold text-amber-400">({form.discountPercent}% OFF)</span>
+                    </>
+                  ) : (
+                    <span className="text-stone-400 italic">No discount active</span>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm">
@@ -541,7 +594,7 @@ export function AdminPage() {
                 </select>
               </label>
 
-              {/* DYNAMIC AGE RANGE CUSTOM DROPDOWN WITH VISIBLE TEXT & INLINE DELETE */}
+              {/* DYNAMIC AGE RANGE CUSTOM DROPDOWN */}
               <div className="block text-sm relative" ref={dropdownRef}>
                 <div className="flex items-center justify-between">
                   <span>Age Range / Group</span>
@@ -638,7 +691,7 @@ export function AdminPage() {
               </div>
             </div>
 
-            {/* SIZES INPUT WITH LIVE INLINE VALIDATION */}
+            {/* SIZES INPUT */}
             <label className="block text-sm">
               <div className="flex items-center justify-between">
                 <span>Sizes (format: 2Y or 2Y, 3Y, 4Y)</span>
@@ -730,36 +783,52 @@ export function AdminPage() {
         <div className="glass rounded-xl p-8 shadow-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)]">
           <h2 className="font-display text-3xl mb-6 shrink-0">Live Pieces ({products.length})</h2>
           <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-            {products.map((p) => (
-              <div key={p.id} className="glass flex items-center gap-4 rounded-xl p-4 border border-[var(--border)]">
-                <img src={p.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 font-medium">{p.name}</p>
-                  <p className="text-sm text-[var(--accent-primary)]">{formatINR(p.price)}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    {normaliseAgeRange(p.ageRange)} · Sizes: {(p.sizes || []).join(", ")}
-                    {p.designNo && ` · #${p.designNo}`}
-                    {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
-                  </p>
+            {products.map((p) => {
+              const itemDiscount = p.discountPercent ?? 0;
+              const itemMrp =
+                itemDiscount > 0 && itemDiscount < 100
+                  ? Math.round(p.price / (1 - itemDiscount / 100))
+                  : p.price;
+
+              return (
+                <div key={p.id} className="glass flex items-center gap-4 rounded-xl p-4 border border-[var(--border)]">
+                  <img src={p.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 font-medium">{p.name}</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-bold text-[var(--accent-primary)]">{formatINR(p.price)}</span>
+                      {itemDiscount > 0 && (
+                        <>
+                          <span className="text-xs text-stone-400 line-through">MRP {formatINR(itemMrp)}</span>
+                          <span className="text-[11px] font-bold text-amber-500">({itemDiscount}% OFF)</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      {normaliseAgeRange(p.ageRange)} · Sizes: {(p.sizes || []).join(", ")}
+                      {p.designNo && ` · #${p.designNo}`}
+                      {p.stockQuantity !== undefined && ` · Stock: ${p.stockQuantity}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(p)}
+                      className="btn-admin-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingProduct(p)}
+                      className="btn-admin-sm-danger"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(p)}
-                    className="btn-admin-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeletingProduct(p)}
-                    className="btn-admin-sm-danger"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

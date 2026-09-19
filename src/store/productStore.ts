@@ -21,13 +21,13 @@ export const useProductStore = create<ProductState>((set) => ({
   error: null,
   
   hydrate: () => {
-    // Prevent multiple subscriptions
     if (unsubscribe) return;
 
     set({ loading: true, error: null });
     const q = query(collection(db, "products"));
     
-    unsubscribe = onSnapshot(q, 
+    unsubscribe = onSnapshot(
+      q, 
       (snapshot) => {
         const products: Product[] = snapshot.docs.map((d) => ({
           id: d.id,

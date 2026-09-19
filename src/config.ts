@@ -32,7 +32,6 @@ export type AgeRange = string;
 export function normaliseAgeRange(raw?: string): string {
   if (!raw) return "";
   const cleaned = raw.replace(/\s+/g, " ").trim();
-  // Catches 4-8, 4y-8y, 4Y - 8Y, 4-8 Years, etc.
   const match = cleaned.match(/(\d+)\s*(?:[yY]|years?|yrs?)?\s*[-–]\s*(\d+)\s*(?:[yY]|years?|yrs?)?/i);
   if (!match) return cleaned;
   const low = Number(match[1]);
@@ -45,6 +44,7 @@ export type Product = {
   name: string;
   image: string;
   price: number;
+  discountPercent?: number; // Dynamic Admin Offer (e.g., 20 for 20% OFF, 0 for None)
   gender: Gender;
   ageRange: AgeRange;
   description: string;
@@ -72,6 +72,7 @@ export const initialProducts: Product[] = [
     name: "Royal Blue Floral Lehenga Set",
     image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?q=80&w=1200&auto=format&fit=crop",
     price: 1899,
+    discountPercent: 25,
     gender: "Girl",
     ageRange: "2-5 Years",
     description: "Royal blue lehenga set with a floral top, layered skirt, and matching dupatta. Ideal for weddings and festivals.",
@@ -86,6 +87,7 @@ export const initialProducts: Product[] = [
     name: "Golden Zari Silk Kurta Set",
     image: "https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?q=80&w=1200&auto=format&fit=crop",
     price: 1499,
+    discountPercent: 15,
     gender: "Boy",
     ageRange: "1-4 Years",
     description: "Soft silk kurta set with golden zari borders and lightweight cotton lining for all-day comfort.",
@@ -100,6 +102,7 @@ export const initialProducts: Product[] = [
     name: "Pastel Pink Party Gown",
     image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?q=80&w=1200&auto=format&fit=crop",
     price: 2199,
+    discountPercent: 30,
     gender: "Girl",
     ageRange: "4-8 Years",
     description: "Sparkly party gown for girls with a sequin top, soft tulle skirt, and feathered shoulders for a royal look.",
@@ -114,6 +117,7 @@ export const initialProducts: Product[] = [
     name: "Festive Embroidered Sherwani",
     image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?q=80&w=1200&auto=format&fit=crop",
     price: 1799,
+    discountPercent: 20,
     gender: "Boy",
     ageRange: "2-5 Years",
     description: "Classic embroidered sherwani paired with soft churidar pants. Tailored for celebratory occasions.",

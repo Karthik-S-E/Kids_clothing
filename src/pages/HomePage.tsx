@@ -1,237 +1,292 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, ShieldCheck, Truck, MessageCircle, ArrowRight, Award, Star } from "lucide-react";
-import { ProductCard } from "../components/ProductCard";
-import { ScrollReveal, StaggerReveal } from "../components/ScrollReveal";
-import { Marquee } from "../components/Marquee";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  ArrowRight, 
+  ShoppingBag 
+} from "lucide-react";
 import { useProductStore } from "../store/productStore";
-import { whatsappChatUrl } from "../lib/whatsapp";
+import { formatINR } from "../lib/formatINR";
+import { whatsappOrderUrl } from "../lib/whatsapp";
 
-const HERO_MOTION_IMAGE = "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?q=80&w=2144&auto=format&fit=crop";
+// Editorial slides matching Their Nibs aesthetic
+const HERO_SLIDES = [
+  {
+    image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?q=80&w=2000&auto=format&fit=crop",
+    title: "New shapes, fresh prints, instant favourites.",
+    subTitle: "HANDCRAFTED KIDS FESTIVE & LOUNGEWEAR",
+    buttonText: "SHOP NEW IN",
+    link: "/shop"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?q=80&w=2000&auto=format&fit=crop",
+    title: "Children's Festive Sets",
+    subTitle: "PRINTS, HERITAGE BORDERS & PURE COTTON COMFORT",
+    buttonText: "EXPLORE COLLECTION",
+    link: "/shop"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?q=80&w=2000&auto=format&fit=crop",
+    title: "Soft Pastel Party Frocks",
+    subTitle: "FEATHER-LIGHT TULLE & GENTLE SILK",
+    buttonText: "VIEW GIRLS WEAR",
+    link: "/shop?gender=Girl"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1617331140180-e8262094733a?q=80&w=2000&auto=format&fit=crop",
+    title: "Heirloom Floral Lehengas",
+    subTitle: "TIMELESS TRADITIONS FOR LITTLE ONES",
+    buttonText: "DISCOVER LEHENGAS",
+    link: "/shop"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?q=80&w=2000&auto=format&fit=crop",
+    title: "Pure Cotton Festive Kurtas",
+    subTitle: "BREATHABLE INNER LININGS · ZERO ITCH",
+    buttonText: "SHOP FESTIVE",
+    link: "/shop"
+  }
+];
 
 export function HomePage() {
   const allProducts = useProductStore((s) => s.products);
-  const products = allProducts.slice(0, 4);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState<"new" | "bestsellers" | "purecotton">("new");
+
+  // Carousel auto-rotate
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const slide = HERO_SLIDES[currentSlide];
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Top Notification Bar */}
-      <div className="bg-[#1f1a14] text-[var(--accent-primary)] py-2.5 px-4 text-center text-xs tracking-[0.25em] font-medium">
-        <span>✨ Festive Collection · Easy Order & Help on WhatsApp</span>
+    <div className="flex min-h-screen flex-col bg-[#faf6f2] font-['Poppins',sans-serif] text-[#1d1d1b] antialiased">
+      
+      {/* 1. Banner with Express Delivery */}
+      <div className="flex items-center justify-center gap-2 bg-[#f6b49e] px-4 py-2 text-center text-[12.5px] font-medium tracking-wide text-[#1d1d1b]">
+        <span className="text-base select-none" role="img" aria-label="India Flag">🇮🇳</span>
+        <span>Free Express Delivery Across India on Orders Over ₹999</span>
+        <span className="text-base select-none" role="img" aria-label="India Flag">🇮🇳</span>
       </div>
 
-      {/* Marquee Bar */}
-      <div className="relative z-10 py-3.5 border-b border-[var(--border)] bg-[var(--surface)]">
-        <Marquee speed={35} className="text-xs tracking-[0.3em] font-medium text-[var(--text-primary)]">
-          <span className="mx-8">Handmade Quality</span>
-          <span className="text-[var(--accent-primary)] select-none" aria-hidden="true">•</span>
-          <span className="mx-8">100% Pure Cotton Lining</span>
-          <span className="text-[var(--accent-primary)] select-none" aria-hidden="true">•</span>
-          <span className="mx-8">Direct WhatsApp Ordering</span>
-          <span className="text-[var(--accent-primary)] select-none" aria-hidden="true">•</span>
-          <span className="mx-8">All-India Fast Delivery</span>
-          <span className="text-[var(--accent-primary)] select-none" aria-hidden="true">•</span>
-        </Marquee>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-[#0a0f0d] isolate">
-        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* 2. Full Bleed Editorial Hero with Vintage Gradient Overlay */}
+      <section className="relative h-[65vh] sm:h-[78vh] lg:h-[84vh] w-full overflow-hidden bg-stone-900">
+        <div className="relative h-full w-full">
           <img
-            src={HERO_MOTION_IMAGE}
-            alt="Kids Ethnic Festive Collection"
-            loading="eager"
-            fetchPriority="high"
-            className="w-full h-full object-cover object-center opacity-40 contrast-[1.05] animate-kenburns"
+            key={slide.image}
+            src={slide.image}
+            alt={slide.title}
+            className="h-full w-full object-cover object-center transition-all duration-1000 ease-out"
           />
-          <div className="absolute inset-0 bg-[#0a0f0d]/75" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/20 to-black/10 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-[#f6b49e]/10 mix-blend-color" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-12 py-24 w-full">
-          <ScrollReveal delay={0.1} duration={0.9} direction="up">
-            <div className="max-w-3xl">
-              <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-[#141414] px-5 py-2 text-xs font-semibold tracking-[0.3em] text-[var(--accent-primary)]">
-                <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
-                Festive Collection 2026
-              </div>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center text-white">
+          <p className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/90 uppercase drop-shadow-xs">
+            {slide.subTitle}
+          </p>
+          
+          <h1 className="max-w-3xl font-serif text-3xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-tight drop-shadow-md">
+            {slide.title}
+          </h1>
 
-              <h1 className="font-display text-5xl sm:text-7xl lg:text-7xl text-white font-normal tracking-tight leading-[1.05]">
-                Traditional Indian Wear for <span className="text-[var(--accent-primary)] italic font-serif">Little Kids</span>.
-              </h1>
-
-              <p className="mt-6 max-w-xl text-lg sm:text-xl font-light leading-relaxed text-white/90">
-                Traditional kurtas, lehengas, and festive sets made for children. Lined with soft cotton so they stay comfortable all day.
-              </p>
-
-              <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-5">
-                <Link
-                  to="/shop"
-                  className="group inline-flex items-center gap-3 rounded-full bg-[var(--accent-primary)] px-8 py-4 text-sm font-semibold text-black shadow-2xl transition-all hover:brightness-110 hover:scale-105 active:scale-95"
-                >
-                  Explore Collection
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <a
-                  href={whatsappChatUrl("Hi Kandamma! I would like recommendations for my child's outfit.")}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2.5 rounded-full border border-white/60 bg-[#141414] px-8 py-4 text-sm font-medium text-white transition-all hover:bg-black"
-                >
-                  <MessageCircle className="h-4 w-4 text-[#25D366]" />
-                  Order on WhatsApp
-                </a>
-              </div>
-
-              <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-white/15 pt-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e1e1e] border border-white/20 text-[var(--accent-primary)]">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold tracking-wider text-white">Pure Comfort</p>
-                    <p className="text-xs text-white/80">100% Breathable Cotton Lining</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e1e1e] border border-white/20 text-[var(--accent-primary)]">
-                    <Truck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold tracking-wider text-white">Fast Delivery</p>
-                    <p className="text-xs text-white/80">Delivered Across All of India</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e1e1e] border border-white/20 text-[var(--accent-primary)]">
-                    <MessageCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold tracking-wider text-white">Easy WhatsApp Order</p>
-                    <p className="text-xs text-white/80">Quick Replies & Custom Sizes</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
+          <Link
+            to={slide.link}
+            className="mt-8 inline-block rounded-none bg-white px-8 py-3.5 text-xs font-bold tracking-[0.2em] text-[#1d1d1b] shadow-xl transition-all duration-200 hover:bg-[#1d1d1b] hover:text-white"
+          >
+            {slide.buttonText}
+          </Link>
         </div>
-      </section>
 
-      {/* Brand Promise Section */}
-      <section className="py-24 px-6 lg:px-12 bg-[var(--background)]">
-        <ScrollReveal delay={0.2} duration={0.8}>
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.3em] text-[var(--accent-primary)] mb-4">
-              <Award className="h-4 w-4" />
-              The Kandamma Promise
-            </div>
-            <h2 className="font-display text-4xl sm:text-5xl font-normal text-[var(--text-primary)] leading-tight">
-              Festive dresses made comfortable for children
-            </h2>
+        <div className="absolute bottom-5 left-0 right-0 z-20 flex items-center justify-center gap-4 text-white">
+          <button
+            type="button"
+            onClick={() => setCurrentSlide((prev) => (prev === 0 ? HERO_SLIDES.length - 1 : prev - 1))}
+            className="p-1 hover:opacity-75 transition cursor-pointer"
+            aria-label="Previous Slide"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
 
-            <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] font-light leading-relaxed">
-              Kids’ festive clothes should feel gentle on soft skin. We make every piece with light cotton and silk so children can run, play, and celebrate happily without irritation.
-            </p>
-
-            <div className="mt-10 flex justify-center items-center gap-8 text-[var(--text-secondary)] text-sm tracking-widest flex-wrap">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-[var(--accent-primary)] fill-[var(--accent-primary)]" />
-                <span>Zero-itch fabrics</span>
-              </div>
-              <span className="text-[var(--accent-primary)]" aria-hidden="true">•</span>
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-[var(--accent-primary)] fill-[var(--accent-primary)]" />
-                <span>Soft inner lining</span>
-              </div>
-              <span className="text-[var(--accent-primary)]" aria-hidden="true">•</span>
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-[var(--accent-primary)] fill-[var(--accent-primary)]" />
-                <span>Comfortable fitting</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrentSlide(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`h-2 rounded-full transition-all ${
+                  currentSlide === i ? "w-6 bg-white" : "w-2 bg-white/50"
+                }`}
+              />
+            ))}
           </div>
-        </ScrollReveal>
+
+          <button
+            type="button"
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+            className="p-1 hover:opacity-75 transition cursor-pointer"
+            aria-label="Next Slide"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
       </section>
 
-      {/* Featured Pieces */}
-      <section className="py-24 px-6 lg:px-12 bg-[var(--surface)] border-y border-[var(--border)]">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.3em] text-[var(--accent-primary)] mb-2">Popular Outfits</p>
-              <h2 className="font-display text-4xl sm:text-5xl font-normal text-[var(--text-primary)]">Featured Outfits</h2>
-            </div>
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] text-[var(--accent-primary)] hover:underline"
+      {/* 3. Category Tab Bar */}
+      <section className="mx-auto max-w-7xl px-6 pt-12 pb-4 w-full">
+        <div className="flex items-center justify-between border-b border-[#1d1d1b]/15 pb-4">
+          <div className="flex items-center gap-6 sm:gap-10 text-sm sm:text-base font-serif tracking-wide">
+            <button
+              type="button"
+              onClick={() => setActiveTab("new")}
+              className={`pb-1 transition-all ${
+                activeTab === "new"
+                  ? "border-b-2 border-[#1d1d1b] font-semibold text-[#1d1d1b]"
+                  : "text-[#1d1d1b]/60 hover:text-[#1d1d1b]"
+              }`}
             >
-              View all products <ArrowRight className="h-4 w-4" />
+              New In
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("bestsellers")}
+              className={`pb-1 transition-all ${
+                activeTab === "bestsellers"
+                  ? "border-b-2 border-[#1d1d1b] font-semibold text-[#1d1d1b]"
+                  : "text-[#1d1d1b]/60 hover:text-[#1d1d1b]"
+              }`}
+            >
+              Best Sellers
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("purecotton")}
+              className={`pb-1 transition-all ${
+                activeTab === "purecotton"
+                  ? "border-b-2 border-[#1d1d1b] font-semibold text-[#1d1d1b]"
+                  : "text-[#1d1d1b]/60 hover:text-[#1d1d1b]"
+              }`}
+            >
+              Cotton Lined & Festive
+            </button>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-3 text-[#1d1d1b]">
+            <span className="text-xs tracking-wider uppercase text-[#1d1d1b]/60">Explore All</span>
+            <Link to="/shop" className="p-1 hover:translate-x-1 transition-transform">
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-
-          <StaggerReveal staggerDelay={0.15} className={`grid gap-8 sm:grid-cols-2 ${products.length >= 3 ? "lg:grid-cols-4" : products.length === 2 ? "lg:grid-cols-2 max-w-3xl" : "lg:grid-cols-1 max-w-md"}`}>
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </StaggerReveal>
         </div>
       </section>
 
-      {/* WhatsApp CTA Section */}
-      <section className="py-20 px-6 lg:px-12 bg-[#0d1210] relative isolate">
-        <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#052e16] border border-[#22c55e]/40 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-[#22c55e] mb-6">
-            <MessageCircle className="h-4 w-4 text-[#22c55e]" />
-            Fast Ordering via WhatsApp
-          </div>
-          <h2 className="font-display text-4xl sm:text-5xl font-normal text-white">
-            Want to order directly on <span className="text-[var(--accent-primary)] italic">WhatsApp</span>?
-          </h2>
+      {/* 4. Editorial Product Grid (Dynamic Admin Discount Calculation) */}
+      <section className="mx-auto max-w-7xl px-6 py-8 w-full">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          {allProducts.slice(0, 8).map((product) => {
+            const orderLink = whatsappOrderUrl({
+              productName: product.name,
+              size: product.sizes?.[0] || "Standard",
+              price: product.price,
+              productId: product.id,
+            });
 
-          <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto font-light leading-relaxed">
-            Send us a screenshot of the dress or share your child’s age. We will help you select the right size and confirm your order immediately!
-          </p>
+            // Dynamic discount math using admin's discountPercent
+            const discountPercent = Number(product.discountPercent) || 0;
+            const hasDiscount = discountPercent > 0 && discountPercent < 100;
+            const mrp = hasDiscount
+              ? Math.round(product.price / (1 - discountPercent / 100))
+              : product.price;
 
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <a
-              href={whatsappChatUrl("Hi Kandamma! I am looking at your website and want to order an outfit.")}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-3 rounded-full bg-[#25D366] px-10 py-4 text-xs font-bold tracking-[0.2em] text-white shadow-2xl transition-all hover:bg-[#20ba59] hover:scale-105"
-            >
-              <MessageCircle className="h-5 w-5 fill-current" />
-              Chat with Us on WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
+            return (
+              <div key={product.id} className="group flex flex-col text-left">
+                {/* Product Image Frame */}
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#eee6de]">
+                  <Link to={`/shop/${product.id}`} className="block h-full w-full">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                  </Link>
 
-      {/* Shop by Age */}
-      <section className="py-24 px-6 lg:px-12 bg-[var(--background)]">
-        <div className="mx-auto max-w-7xl text-center">
-          <p className="text-xs font-semibold tracking-[0.3em] text-[var(--accent-primary)] mb-3">Find the right fit</p>
-          <h2 className="font-display text-4xl sm:text-5xl font-normal text-[var(--text-primary)] mb-12">Shop by Age</h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {["1-4 Years", "2-5 Years", "4-8 Years", "5-8 Years"].map((age) => (
-              <Link
-                key={age}
-                to={`/shop?age=${encodeURIComponent(age)}`}
-                className="group relative aspect-[4/5] rounded-2xl overflow-hidden border border-[var(--border)] bg-[#121212] p-6 flex flex-col justify-end transition-all hover:border-[var(--accent-primary)] hover:shadow-2xl"
-              >
-                <div className="absolute inset-0 bg-[#000000]/60 pointer-events-none" />
-                <div className="relative z-10 text-left bg-[#121212]/90 p-4 rounded-xl border border-white/10">
-                  <span className="text-xs font-semibold tracking-[0.3em] text-[var(--accent-primary)] block mb-1">Age Group</span>
-                  <span className="font-display text-2xl text-white font-normal group-hover:text-[var(--accent-primary)] transition-colors block">
-                    {age}
+                  {/* Corner age tag */}
+                  <span className="absolute top-2 left-2 bg-white/90 px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase text-[#1d1d1b]">
+                    {product.ageRange}
                   </span>
-                  <span className="mt-3 inline-flex items-center gap-1.5 text-xs tracking-widest text-white group-hover:underline">
-                    View Dresses <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                  </span>
+
+                  {/* Quick WhatsApp Order Button on Hover */}
+                  <a
+                    href={orderLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="absolute bottom-3 left-3 right-3 flex items-center justify-center gap-1.5 bg-white/95 py-2.5 text-[11px] font-bold tracking-widest text-[#1d1d1b] uppercase opacity-0 shadow-md backdrop-blur-xs transition-all duration-200 group-hover:opacity-100 hover:bg-[#1d1d1b] hover:text-white"
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" /> Quick Order
+                  </a>
                 </div>
-              </Link>
-            ))}
-          </div>
+
+                {/* Product Typography & Pricing */}
+                <div className="pt-3">
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-[#1d1d1b]/60">
+                    {product.gender}
+                  </p>
+                  <Link
+                    to={`/shop/${product.id}`}
+                    className="mt-0.5 block line-clamp-1 font-serif text-[15px] sm:text-[16px] text-[#1d1d1b] hover:underline"
+                  >
+                    {product.name}
+                  </Link>
+
+                  {/* Price, Dynamic Strikethrough MRP & % OFF */}
+                  <div className="mt-1 flex flex-wrap items-baseline gap-1.5">
+                    <span className="text-sm sm:text-base font-bold text-[#1d1d1b]">
+                      {formatINR(product.price)}
+                    </span>
+                    {hasDiscount && (
+                      <>
+                        <span className="text-[11px] sm:text-xs text-stone-500 line-through font-medium">
+                          MRP {formatINR(mrp)}
+                        </span>
+                        <span className="text-[11px] sm:text-xs font-bold text-amber-700">
+                          ({discountPercent}% OFF)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 5. Minimalist Heritage Story Banner */}
+      <section className="my-12 bg-[#f3e7df] px-6 py-16 text-center">
+        <div className="mx-auto max-w-2xl">
+          <span className="text-xs font-bold tracking-[0.25em] text-[#1d1d1b]/70 uppercase">
+            Pure Heritage · Made In India 🇮🇳
+          </span>
+          <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-[#1d1d1b] font-normal">
+            Soft Prints Designed for Little Celebrations
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-[#1d1d1b]/80">
+            Every garment is tailored with itch-free seams and 100% breathable mul-cotton inner linings. Designed so children can move freely, celebrate happily, and rest peacefully.
+          </p>
+          <Link
+            to="/shop"
+            className="mt-8 inline-block border-b-2 border-[#1d1d1b] pb-1 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-70 transition"
+          >
+            Read Our Story &gt;
+          </Link>
         </div>
       </section>
     </div>

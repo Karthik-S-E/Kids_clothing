@@ -36,6 +36,13 @@ export function ProductCard({ product }: { product: Product }) {
   const displayDescription = getCardDescription(product.name, product.description);
   const displayAge = normaliseAgeRange(product.ageRange);
 
+  // Dynamic MRP and discount calculation from admin input
+  const discountPercent = Number(product.discountPercent) || 0;
+  const hasDiscount = discountPercent > 0 && discountPercent < 100;
+  const mrp = hasDiscount
+    ? Math.round(product.price / (1 - discountPercent / 100))
+    : product.price;
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 15 }}
@@ -75,18 +82,32 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </div>
 
-          <div className="flex items-start justify-between gap-2 min-h-[2.5rem]">
+          <div className="min-h-[2.5rem]">
             <Link
               to={`/shop/${product.id}`}
-              className="hover:text-amber-800 transition-colors flex-1"
+              className="hover:text-amber-800 transition-colors block"
             >
               <h2 className="text-xs sm:text-sm font-bold leading-tight text-[#282c3f] line-clamp-2">
                 {product.name}
               </h2>
             </Link>
-            <span className="shrink-0 text-sm sm:text-base font-extrabold text-[#282c3f]">
+          </div>
+
+          {/* Pricing Block with Dynamic Admin Discount */}
+          <div className="mt-1 flex flex-wrap items-baseline gap-1.5">
+            <span className="text-sm sm:text-base font-extrabold text-[#282c3f]">
               {formatINR(product.price)}
             </span>
+            {hasDiscount && (
+              <>
+                <span className="text-[11px] sm:text-xs text-stone-500 line-through font-medium">
+                  MRP {formatINR(mrp)}
+                </span>
+                <span className="text-[11px] sm:text-xs font-bold text-amber-700">
+                  ({discountPercent}% OFF)
+                </span>
+              </>
+            )}
           </div>
 
           <p className="mt-1.5 line-clamp-2 text-[11px] text-[#696b79] leading-relaxed min-h-[2rem]">
