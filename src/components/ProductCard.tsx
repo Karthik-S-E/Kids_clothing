@@ -1,11 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { MessageCircle, ArrowRight } from "lucide-react";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "../lib/firebase";
+import { motion, AnimatePresence } from "framer-motion";
+import { Heart, ArrowRight } from "lucide-react";
 import { normaliseAgeRange, type Product } from "../config";
 import { formatINR } from "../lib/formatINR";
-import { whatsappOrderUrl } from "../lib/whatsapp";
+import { useWishlistStore } from "../store/wishlistStore";
 
 function getCardDescription(name: string, defaultDesc: string): string {
   const normalized = name.toLowerCase();
@@ -17,7 +16,11 @@ function getCardDescription(name: string, defaultDesc: string): string {
 
 export function ProductCard({ product }: { product: Product }) {
   const inStock = product.stockStatus ?? true;
-  const size = product.sizes?.[0] ?? "Standard";
+  const [selectedSize, setSelectedSize] = useState<string>(product.sizes?.[0] ?? "Standard");
+  const [isHovered, setIsHovered] = useState(false);
+
+  const { items: wishlistItems, toggleWishlist, isInWishlist } = useWishlistStore();
+  const isWishlisted = isInWishlist(product.id);
 
   const displayDescription = getCardDescription(product.name, product.description);
   const displayAge = normaliseAgeRange(product.ageRange);
@@ -26,63 +29,10 @@ export function ProductCard({ product }: { product: Product }) {
   const hasDiscount = discountPercent > 0 && discountPercent < 100;
   const mrp = hasDiscount ? Math.round(product.price / (1 - discountPercent / 100)) : product.price;
 
-  const handleWhatsAppOrderClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const user = auth.currentUser;
-
-    if (!user) {
-      alert("Please sign in first so your order can be saved to your account!");
-      return;
-    }
-
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const orderId = `KK-${randomNum}`;
-
-    try {
-      // Use setDoc with a specific ID to ensure it writes cleanly every time
-      const orderRef = doc(db, "orders", orderId);
-      await setDoc(orderRef, {
-        orderId: orderId,
-        orderNumber: orderId,
-        userId: user.uid,
-        userEmail: user.email || "",
-        userName: user.displayName || "Customer",
-        items: [
-          {
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            size,
-            quantity: 1,
-            image: product.image,
-          },
-        ],
-        totalAmount: product.price,
-        status: "Confirmed",
-        delivery: {
-          customerName: user.displayName || "Customer",
-          phone: "9999999999",
-          address: "Registered Address",
-          city: "Tarikere",
-          pincode: "577228",
-        },
-        createdAt: serverTimestamp(),
-      });
-      console.log("SUCCESSFULLY SAVED ORDER:", orderId);
-    } catch (err: any) {
-      console.error("FIRESTORE WRITE FAILED:", err);
-      alert("Database error: " + (err.message || "Could not save order. Check Firestore rules."));
-    }
-
-    const customOrderUrl = whatsappOrderUrl({
-      orderId,
-      productName: product.name,
-      size,
-      price: product.price,
-      productId: product.id,
-    });
-
-    window.open(customOrderUrl, "_blank", "noreferrer");
+    e.stopPropagation();
+    toggleWishlist(product);
   };
 
   return (
@@ -91,6 +41,8 @@ export function ProductCard({ product }: { product: Product }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="group relative flex flex-col h-full rounded-xl border border-stone-200/80 bg-white shadow-xs transition-all duration-200 hover:shadow-md hover:border-stone-300 overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Link to={`/shop/${product.id}`} className="relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-stone-100 block">
         <img
@@ -104,6 +56,77 @@ export function ProductCard({ product }: { product: Product }) {
             Out of Stock
           </span>
         )}
+
+        {/* Myntra-Style Floating Wishlist Heart Button */}
+        <button
+          type="button"
+          onClick={handleWishlistClick}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md transition hover:scale-110 cursor-pointer z-10"
+          aria-label="Wishlist toggle"
+        >
+          <Heart
+            className={`h-4 w-4 transition-colors ${
+              isWishlisted ? "fill-[#ff3e6c] text-[#ff3e6c]" : "text-stone-600 hover:text-stone-900"
+            }`}
+          />
+        </button>
+
+        {/* Hover Popup / Slide-Up Overlay */}
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-md p-3 border-t border-stone-200 shadow-lg z-20"
+              onClick={(e) => e.preventDefault()}
+            >
+              <div className="text-[11px] font-bold text-stone-700 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+                <span>Select Size</span>
+                <span className="text-[10px] text-stone-400 font-normal">Sizes:</span>
+              </div>
+
+              {/* Sizes Pill Selector Popup */}
+              {product.sizes && product.sizes.length > 0 ? (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {product.sizes.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedSize(s);
+                      }}
+                      className={`rounded px-2 py-1 text-[11px] font-bold transition cursor-pointer shrink-0 ${
+                        selectedSize === s
+                          ? "bg-[#282c3f] text-white shadow-xs"
+                          : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-[11px] text-stone-500 font-medium">Standard Fit</span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleWishlistClick}
+                className={`mt-2.5 w-full flex items-center justify-center gap-1.5 rounded-[4px] py-2 text-[11px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                  isWishlisted
+                    ? "bg-red-50 text-[#ff3e6c] border border-red-200"
+                    : "bg-[#282c3f] text-white hover:bg-stone-800"
+                }`}
+              >
+                <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
+                {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Link>
 
       <div className="flex flex-1 flex-col justify-between p-4">
@@ -156,17 +179,13 @@ export function ProductCard({ product }: { product: Product }) {
             Details <ArrowRight className="h-3 w-3" />
           </Link>
 
-          <a
-            href="#order"
-            onClick={handleWhatsAppOrderClick}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-[11px] font-bold tracking-wide text-white shadow-xs hover:bg-[#20ba59] active:scale-95 transition-all cursor-pointer"
-          >
-            <MessageCircle className="h-3.5 w-3.5 fill-current" /> Order via WhatsApp
-          </a>
+          <span className="text-[11px] font-medium text-stone-400">
+            Size: <strong className="text-stone-700">{selectedSize}</strong>
+          </span>
         </div>
       </div>
     </motion.article>
   );
 }
+
+export default ProductCard;

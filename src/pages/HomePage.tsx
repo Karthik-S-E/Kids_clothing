@@ -4,11 +4,11 @@ import {
   ChevronLeft, 
   ChevronRight, 
   ArrowRight, 
-  ShoppingBag 
+  Heart 
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { formatINR } from "../lib/formatINR";
-import { whatsappOrderUrl } from "../lib/whatsapp";
+import { useWishlistStore } from "../store/wishlistStore";
 
 // Vector Indian Flag component to render consistently across all desktop and mobile platforms
 function IndiaFlag({ className = "h-3.5 w-5" }: { className?: string }) {
@@ -86,6 +86,8 @@ export function HomePage() {
   const allProducts = useProductStore((s) => s.products);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeTab, setActiveTab] = useState<"new" | "bestsellers" | "purecotton">("new");
+
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
 
   // Carousel auto-rotate
   useEffect(() => {
@@ -220,16 +222,11 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 4. Editorial Product Grid (Dynamic Admin Discount Calculation) */}
+      {/* 4. Editorial Product Grid (Clean Myntra-style Wishlist Cards) */}
       <section className="mx-auto max-w-7xl px-6 py-8 w-full">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {allProducts.slice(0, 8).map((product) => {
-            const orderLink = whatsappOrderUrl({
-              productName: product.name,
-              size: product.sizes?.[0] || "Standard",
-              price: product.price,
-              productId: product.id,
-            });
+            const isWishlisted = isInWishlist(product.id);
 
             // Dynamic discount math using admin's discountPercent
             const discountPercent = Number(product.discountPercent) || 0;
@@ -237,6 +234,12 @@ export function HomePage() {
             const mrp = hasDiscount
               ? Math.round(product.price / (1 - discountPercent / 100))
               : product.price;
+
+            const handleWishlist = (e: React.MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(product);
+            };
 
             return (
               <div key={product.id} className="group flex flex-col text-left">
@@ -256,15 +259,19 @@ export function HomePage() {
                     {product.ageRange}
                   </span>
 
-                  {/* Quick WhatsApp Order Button on Hover */}
-                  <a
-                    href={orderLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="absolute bottom-3 left-3 right-3 flex items-center justify-center gap-1.5 bg-white/95 py-2.5 text-[11px] font-bold tracking-widest text-[#1d1d1b] uppercase opacity-0 shadow-md backdrop-blur-xs transition-all duration-200 group-hover:opacity-100 hover:bg-[#1d1d1b] hover:text-white"
+                  {/* Myntra-Style Floating Wishlist Heart */}
+                  <button
+                    type="button"
+                    onClick={handleWishlist}
+                    className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md transition hover:scale-110 cursor-pointer"
+                    aria-label="Wishlist toggle"
                   >
-                    <ShoppingBag className="h-3.5 w-3.5" /> Quick Order
-                  </a>
+                    <Heart
+                      className={`h-4 w-4 transition-colors ${
+                        isWishlisted ? "fill-[#ff3e6c] text-[#ff3e6c]" : "text-stone-600 hover:text-stone-900"
+                      }`}
+                    />
+                  </button>
                 </div>
 
                 {/* Product Typography & Pricing */}
@@ -326,3 +333,5 @@ export function HomePage() {
     </div>
   );
 }
+
+export default HomePage;
