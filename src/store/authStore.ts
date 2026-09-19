@@ -1,39 +1,24 @@
 import { create } from "zustand";
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  type User,
-} from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
-type AuthState = {
+interface AuthState {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-};
+}
 
-export const useAuthStore = create<AuthState>(() => ({
-  user: null,
-  loading: true,
+export const useAuthStore = create<AuthState>((set) => {
+  onAuthStateChanged(auth, (user) => {
+    set({ user, loading: false });
+  });
 
-  login: async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return true;
-    } catch (err) {
-      console.error("Firebase Auth error:", err);
-      return false;
-    }
-  },
-
-  logout: async () => {
-    await signOut(auth);
-  },
-}));
-
-/* Subscribe once so the loading state resolves before any component renders */
-onAuthStateChanged(auth, (user) => {
-  useAuthStore.setState({ user, loading: false });
+  return {
+    user: null,
+    loading: true,
+    logout: async () => {
+      await signOut(auth);
+      set({ user: null });
+    },
+  };
 });

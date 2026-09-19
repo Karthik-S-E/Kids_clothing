@@ -3,12 +3,12 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDoCaCCNdgVtbb4vb0zdthZc7FM6CGyBxw",
-  authDomain: "kandamma-kids.firebaseapp.com",
-  projectId: "kandamma-kids",
-  storageBucket: "kandamma-kids.appspot.com",
-  messagingSenderId: "123423215384",
-  appId: "1:123423215384:web:a75897ff83c47bc1f9d86d"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDoCaCCNdgVtbb4vb0zdthZc7FM6CGyBxw",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "kandamma-kids.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "kandamma-kids",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "kandamma-kids.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123423215384",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123423215384:web:a75897ff83c47bc1f9d86d",
 };
 
 const app = initializeApp(firebaseConfig);

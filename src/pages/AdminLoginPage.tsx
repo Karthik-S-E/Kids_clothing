@@ -1,70 +1,101 @@
-import { type FormEvent, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 export function AdminLoginPage() {
-  const { user, loading, login } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  if (loading) {
-    return (
-      <section className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6">
-        <p className="text-sm text-[var(--muted)]">Loading…</p>
-      </section>
-    );
-  }
-
-  if (user) return <Navigate to="/admin" replace />;
-
-  async function onSubmit(e: FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError(false);
-    setBusy(true);
-    const ok = await login(email, password);
-    setBusy(false);
-    if (!ok) setError(true);
+    setError(null);
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      navigate("/admin");
+    } catch (err: any) {
+      // Displays the exact Firebase Auth error code
+      console.error("Firebase Login Error:", err);
+      const code = err?.code || "";
+      
+      if (code === "auth/invalid-credential" || code === "auth/wrong-password") {
+        setError("Wrong password entered. Please reset it in Firebase Console.");
+      } else if (code === "auth/user-not-found") {
+        setError("Email not found in Firebase Authentication.");
+      } else if (code === "auth/too-many-requests") {
+        setError("Too many failed attempts. Please wait a few minutes.");
+      } else {
+        setError(err.message || "Failed to sign in.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <section className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6">
-      <p className="text-[11px] uppercase tracking-[0.32em] text-gold">Owners only</p>
-      <h1 className="font-display text-5xl">Enter the atelier</h1>
-      <form onSubmit={onSubmit} className="glass mt-8 space-y-4 rounded-[2rem] p-6">
-        <label className="block text-sm">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@kandammakids.com"
-            className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
-          />
-        </label>
-        <label className="block text-sm">
-          Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 focus:border-gold outline-none"
-          />
-        </label>
-        {error ? (
-          <p className="text-sm text-rose-400">Invalid email or password.</p>
-        ) : null}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-full bg-gold py-3 text-sm font-semibold uppercase tracking-widest text-ink hover:bg-yellow-400 disabled:opacity-50 cursor-pointer"
-        >
-          {busy ? "Signing in…" : "Unlock dashboard"}
-        </button>
+    <div className="flex min-h-[70vh] items-center justify-center px-4">
+      <form
+        onSubmit={handleLogin}
+        className="glass w-full max-w-sm rounded-2xl border border-[var(--border)] p-8 shadow-2xl space-y-5"
+      >
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[var(--accent-primary)] font-semibold">
+            Atelier Portal
+          </p>
+          <h1 className="font-display text-3xl font-normal text-[var(--text-primary)] mt-1">
+            Admin Login
+          </h1>
+        </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-500">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. admin@kandammakids.com"
+              className="w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl border border-[var(--border)] bg-transparent px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn-admin-primary mt-2 flex items-center justify-center"
+          >
+            {loading ? "Authenticating..." : "Sign In"}
+          </button>
+        </div>
       </form>
-    </section>
+    </div>
   );
 }

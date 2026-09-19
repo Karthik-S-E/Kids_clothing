@@ -5,7 +5,6 @@ export const brand = {
   whatsappNumber: "919912345678",
 } as const;
 
-/** Update these to your live brand accounts and WhatsApp business number (country code, no +). */
 export const social = {
   whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER ?? "919901200520",
   instagram: import.meta.env.VITE_INSTAGRAM_URL ?? "https://www.instagram.com/kandammakids",
@@ -18,11 +17,6 @@ export const ageRanges = ["1-4 Years", "2-5 Years", "4-8 Years", "5-8 Years"];
 export type Gender = (typeof genders)[number];
 export type AgeRange = string;
 
-/**
- * Normalise free-text age ranges so "4-8", "4Y-8Y" and "4-8 Years"
- * all map to the same canonical bucket. Used on read so existing
- * Firestore docs need no migration.
- */
 export function normaliseAgeRange(raw: string): string {
   const cleaned = raw.replace(/\s+/g, " ").trim();
   const match = cleaned.match(/(\d+)\s*[-–]\s*(\d+)/);

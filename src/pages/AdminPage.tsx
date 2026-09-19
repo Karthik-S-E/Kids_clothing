@@ -39,7 +39,6 @@ export function AdminPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [logoBusy, setLogoBusy] = useState(false);
 
-  // Dynamic Age Range states
   const [customAgeInput, setCustomAgeInput] = useState("");
   const [isCustomAgeMode, setIsCustomAgeMode] = useState(false);
   const [customAgeList, setCustomAgeList] = useState<string[]>([]);
@@ -51,7 +50,6 @@ export function AdminPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  // Combine default ranges, custom ranges, and any existing ranges from current inventory
   const availableAgeRanges = useMemo(() => {
     const set = new Set<string>([...defaultAgeRanges, ...customAgeList]);
     products.forEach((p) => {
@@ -65,7 +63,7 @@ export function AdminPage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-7xl px-6 py-10">
-        <p className="text-[var(--muted)]">Loading…</p>
+        <p className="text-[var(--text-secondary)]">Authenticating...</p>
       </section>
     );
   }
@@ -242,7 +240,9 @@ export function AdminPage() {
     <section className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-[var(--accent-primary)]">Protected</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--accent-primary)] font-semibold">
+            Signed in as {user.email}
+          </p>
           <h1 className="font-display text-5xl">Inventory Dashboard</h1>
         </div>
         <button
@@ -337,7 +337,6 @@ export function AdminPage() {
               </label>
             </div>
 
-            {/* Individual Color Photo Uploads */}
             {parsedColors.length > 0 && (
               <div className="rounded-xl border border-[var(--border)] bg-white/5 p-4 space-y-3">
                 <p className="text-xs font-semibold tracking-wider text-[var(--accent-primary)]">
@@ -451,7 +450,6 @@ export function AdminPage() {
                 </select>
               </label>
 
-              {/* Dynamic Age Range Selector */}
               <div className="block text-sm">
                 <div className="flex items-center justify-between">
                   <span>Age Range / Group</span>
@@ -609,7 +607,7 @@ export function AdminPage() {
           </form>
         </div>
 
-        {/* List Panel - Sticky with independent scrolling */}
+        {/* List Panel */}
         <div className="glass rounded-xl p-8 shadow-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)]">
           <h2 className="font-display text-3xl mb-6 shrink-0">Live Pieces ({products.length})</h2>
           <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
