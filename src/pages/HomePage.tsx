@@ -10,6 +10,39 @@ import { useProductStore } from "../store/productStore";
 import { formatINR } from "../lib/formatINR";
 import { whatsappOrderUrl } from "../lib/whatsapp";
 
+// Vector Indian Flag component to render consistently across all desktop and mobile platforms
+function IndiaFlag({ className = "h-3.5 w-5" }: { className?: string }) {
+  return (
+    <svg 
+      className={`inline-block shrink-0 rounded-[2px] shadow-2xs ${className}`} 
+      viewBox="0 0 640 480"
+      aria-label="Indian Flag"
+      role="img"
+    >
+      <path fill="#f93" d="M0 0h640v160H0z" />
+      <path fill="#fff" d="M0 160h640v160H0z" />
+      <path fill="#128807" d="M0 320h640v160H0z" />
+      <g transform="matrix(3.2 0 0 3.2 320 240)">
+        <circle r="20" fill="#008" />
+        <circle r="17.5" fill="#fff" />
+        <circle r="3.5" fill="#008" />
+        <g id="spokes">
+          <g id="two-spokes">
+            <line y2="17.5" stroke="#008" strokeWidth=".8" />
+            <line y2="-17.5" stroke="#008" strokeWidth=".8" />
+          </g>
+          <use href="#two-spokes" transform="rotate(15)" />
+          <use href="#two-spokes" transform="rotate(30)" />
+          <use href="#two-spokes" transform="rotate(45)" />
+          <use href="#two-spokes" transform="rotate(60)" />
+          <use href="#two-spokes" transform="rotate(75)" />
+        </g>
+        <use href="#spokes" transform="rotate(90)" />
+      </g>
+    </svg>
+  );
+}
+
 // Editorial slides matching Their Nibs aesthetic
 const HERO_SLIDES = [
   {
@@ -67,11 +100,11 @@ export function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#faf6f2] font-['Poppins',sans-serif] text-[#1d1d1b] antialiased">
       
-      {/* 1. Banner with Express Delivery */}
-      <div className="flex items-center justify-center gap-2 bg-[#f6b49e] px-4 py-2 text-center text-[12.5px] font-medium tracking-wide text-[#1d1d1b]">
-        <span className="text-base select-none" role="img" aria-label="India Flag">🇮🇳</span>
+      {/* 1. Banner with Express Delivery and Vector Indian Flags */}
+      <div className="flex items-center justify-center gap-2.5 bg-[#f6b49e] px-4 py-2 text-center text-[12.5px] font-medium tracking-wide text-[#1d1d1b]">
+        <IndiaFlag />
         <span>Free Express Delivery Across India on Orders Over ₹999</span>
-        <span className="text-base select-none" role="img" aria-label="India Flag">🇮🇳</span>
+        <IndiaFlag />
       </div>
 
       {/* 2. Full Bleed Editorial Hero with Vintage Gradient Overlay */}
@@ -272,8 +305,9 @@ export function HomePage() {
       {/* 5. Minimalist Heritage Story Banner */}
       <section className="my-12 bg-[#f3e7df] px-6 py-16 text-center">
         <div className="mx-auto max-w-2xl">
-          <span className="text-xs font-bold tracking-[0.25em] text-[#1d1d1b]/70 uppercase">
-            Pure Heritage · Made In India 🇮🇳
+          <span className="inline-flex items-center justify-center gap-2 text-xs font-bold tracking-[0.25em] text-[#1d1d1b]/70 uppercase">
+            <span>Pure Heritage · Made In India</span>
+            <IndiaFlag className="h-3 w-4" />
           </span>
           <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-[#1d1d1b] font-normal">
             Soft Prints Designed for Little Celebrations

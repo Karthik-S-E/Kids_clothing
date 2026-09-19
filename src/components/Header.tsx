@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import { useBrandStore } from "../store/brandStore";
 import { social } from "../config";
 
@@ -30,8 +31,12 @@ function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
 export function Header({ onOpenCart }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const wishlistItems = useWishlistStore((s) => s.items);
+  const wishlistCount = wishlistItems.length;
 
   const { settings, fetchSettings } = useBrandStore();
 
@@ -41,7 +46,6 @@ export function Header({ onOpenCart }: HeaderProps) {
     }
   }, [settings.logoUrl, fetchSettings]);
 
-  // Close drawer on route navigation
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -52,9 +56,8 @@ export function Header({ onOpenCart }: HeaderProps) {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8E2D9]">
       <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6">
         
-        {/* Left Side: Mobile Menu Button + Logo Stack */}
+        {/* Left Side: Hamburger (Mobile) + Brand Logo */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* 3-line hamburger button (Mobile only) */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -87,7 +90,7 @@ export function Header({ onOpenCart }: HeaderProps) {
           </Link>
         </div>
 
-        {/* Center Nav (Desktop only) */}
+        {/* Center Nav Links */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link
             to="/shop"
@@ -127,6 +130,21 @@ export function Header({ onOpenCart }: HeaderProps) {
             <InstagramIcon className="h-5 w-5" />
           </a>
 
+          {/* Wishlist Link with Live Badge */}
+          <Link
+            to="/wishlist"
+            className="relative hover:opacity-70 transition-opacity"
+            aria-label="Wishlist"
+            title="Wishlist"
+          >
+            <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3e6c] text-[9px] font-bold text-white">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           <Link
             to="/admin/login"
             className="hover:opacity-70 transition-opacity"
@@ -136,6 +154,7 @@ export function Header({ onOpenCart }: HeaderProps) {
             <User className="h-5 w-5" />
           </Link>
 
+          {/* Shopping Bag Button with Live Badge */}
           <button
             type="button"
             onClick={onOpenCart}
@@ -152,7 +171,7 @@ export function Header({ onOpenCart }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Slide-Down Menu */}
+      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
           <nav className="flex flex-col space-y-4">
@@ -163,6 +182,19 @@ export function Header({ onOpenCart }: HeaderProps) {
               }`}
             >
               SHOP
+            </Link>
+            <Link
+              to="/wishlist"
+              className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center justify-between ${
+                isActive("/wishlist") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
+              }`}
+            >
+              <span>WISHLIST</span>
+              {wishlistCount > 0 && (
+                <span className="rounded-full bg-[#ff3e6c] px-2 py-0.5 text-xs font-bold text-white">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
             <Link
               to="/about"

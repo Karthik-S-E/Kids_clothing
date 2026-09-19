@@ -7,6 +7,7 @@ import {
   RotateCcw, 
   Heart, 
   ShoppingBag, 
+  MessageCircle,
   Check, 
   ExternalLink,
   ChevronRight,
@@ -15,10 +16,14 @@ import {
 import { formatINR } from "../lib/formatINR";
 import { whatsappOrderUrl } from "../lib/whatsapp";
 import { useProductStore } from "../store/productStore";
+import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 
 export function ProductPage() {
   const { id } = useParams();
   const product = useProductStore((s) => s.products.find((p) => p.id === id));
+  const addItemToCart = useCartStore((s) => s.addItem);
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
 
   const availableColors = product?.color
     ? product.color
@@ -29,8 +34,8 @@ export function ProductPage() {
 
   const [size, setSize] = useState<string>(product?.sizes[0] ?? "");
   const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] ?? "");
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [addedFeedback, setAddedFeedback] = useState(false);
   const [pincode, setPincode] = useState("");
   const [pincodeStatus, setPincodeStatus] = useState<string | null>(null);
 
@@ -52,13 +57,13 @@ export function ProductPage() {
     );
   }
 
+  const isWishlisted = isInWishlist(product.id);
   const inStock = product.stockStatus ?? true;
   const quantity = product.stockQuantity ?? 5;
 
   const activeImage =
     (selectedColor && product.colorImages?.[selectedColor]) || product.image;
 
-  // Dynamic MRP and Discount percentage calculation from admin inputs
   const discountPercent = Number(product.discountPercent) || 0;
   const hasDiscount = discountPercent > 0 && discountPercent < 100;
   const mrp = hasDiscount
@@ -73,6 +78,13 @@ export function ProductPage() {
     .filter(Boolean)
     .join(" ");
 
+  const handleAddToBag = () => {
+    if (!inStock) return;
+    addItemToCart(product, size || product.sizes[0] || "Standard");
+    setAddedFeedback(true);
+    setTimeout(() => setAddedFeedback(false), 2200);
+  };
+
   const handlePincodeCheck = (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\d{6}$/.test(pincode.trim())) {
@@ -83,8 +95,8 @@ export function ProductPage() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-6 font-sans text-stone-900">
-      {/* 1. High Contrast Breadcrumbs */}
+    <main className="mx-auto max-w-7xl px-4 py-6 font-sans text-stone-900 pt-20">
+      {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="mb-6 text-xs text-stone-700 font-medium">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
@@ -108,7 +120,7 @@ export function ProductPage() {
       </nav>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-start">
-        {/* 2. Image Gallery Showcase - Single High-Res Card */}
+        {/* Image Showcase */}
         <section aria-label="Product Media Showcase" className="lg:col-span-6 flex flex-col gap-4">
           <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-white border border-stone-300 shadow-sm">
             <img
@@ -129,7 +141,6 @@ export function ProductPage() {
             )}
           </div>
 
-          {/* Alternate Color Image Previews */}
           {availableColors.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
               {availableColors.map((clr) => {
@@ -152,9 +163,9 @@ export function ProductPage() {
           )}
         </section>
 
-        {/* 3. Product Details Panel */}
+        {/* Product Purchasing Options */}
         <section aria-label="Product Purchasing Options" className="lg:col-span-6 flex flex-col gap-6 bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm">
-          {/* Header & Ratings */}
+          {/* Header & Quality Tag */}
           <div className="border-b border-stone-200 pb-4">
             <h1 className="text-2xl font-black tracking-tight text-stone-900">Kandamma Kids</h1>
             <p className="text-lg font-medium text-stone-700 mt-1">{product.name}</p>
@@ -168,7 +179,7 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Pricing Block with Dynamic Admin Discount */}
+          {/* Pricing */}
           <div className="flex flex-col gap-1 border-b border-stone-200 pb-4">
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-extrabold text-stone-900">
@@ -266,7 +277,6 @@ export function ProductPage() {
               })}
             </div>
 
-            {/* Inventory Status Indicator */}
             <div className="mt-1">
               {inStock ? (
                 quantity <= 3 ? (
@@ -286,44 +296,63 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            {inStock ? (
-              <a
-                href={whatsappOrderUrl({
-                  productName: itemTitle,
-                  size,
-                  price: product.price,
-                  productId: product.id,
-                })}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#ff3e6c] px-8 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-md transition-all hover:bg-[#e7335e] active:scale-[0.98]"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Add to Bag / Order
-              </a>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-stone-200 px-8 py-4 text-sm font-bold uppercase tracking-wider text-stone-500 cursor-not-allowed"
-              >
-                Out of Stock
-              </button>
-            )}
+          {/* Action Buttons: 2-Tier Balanced Layout */}
+          <div className="flex flex-col gap-2.5 pt-2">
+            <div className="grid grid-cols-2 gap-2.5 w-full">
+              {inStock ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleAddToBag}
+                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#ff3e6c] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#e7335e] active:scale-[0.98]"
+                  >
+                    {addedFeedback ? (
+                      <>
+                        <Check className="h-4 w-4" /> Added
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="h-4 w-4" /> Add to Bag
+                      </>
+                    )}
+                  </button>
+
+                  <a
+                    href={whatsappOrderUrl({
+                      productName: itemTitle,
+                      size,
+                      price: product.price,
+                      productId: product.id,
+                    })}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#20bd5a] active:scale-[0.98]"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Order via WhatsApp
+                  </a>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="col-span-2 flex h-12 items-center justify-center gap-2 rounded-lg bg-stone-200 px-4 text-xs font-bold uppercase tracking-wider text-stone-500 cursor-not-allowed"
+                >
+                  Out of Stock
+                </button>
+              )}
+            </div>
 
             <button
               type="button"
-              onClick={() => setIsWishlisted(!isWishlisted)}
-              className={`flex items-center justify-center gap-2 rounded-lg border px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors active:scale-[0.98] ${
+              onClick={() => toggleWishlist(product)}
+              className={`flex h-11 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-colors active:scale-[0.98] ${
                 isWishlisted
                   ? "border-[#ff3e6c] text-[#ff3e6c] bg-[#fff0f3]"
-                  : "border-stone-300 text-stone-900 bg-white hover:border-stone-900"
+                  : "border-stone-300 text-stone-800 bg-white hover:border-stone-800 hover:bg-stone-50"
               }`}
             >
               <Heart className={`h-4 w-4 ${isWishlisted ? "fill-[#ff3e6c] text-[#ff3e6c]" : ""}`} />
-              {isWishlisted ? "Wishlisted" : "Wishlist"}
+              {isWishlisted ? "Saved to Wishlist" : "Add to Wishlist"}
             </button>
           </div>
 
@@ -394,7 +423,7 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Specifications Table */}
+          {/* Specifications */}
           <div className="border-t border-stone-200 pt-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2">
               Product Details
