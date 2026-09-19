@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "../store/cartStore";
 import { formatINR } from "../lib/formatINR";
 import { whatsappCartUrl } from "../lib/whatsapp";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 
 export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

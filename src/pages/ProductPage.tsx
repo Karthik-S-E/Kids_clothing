@@ -18,7 +18,7 @@ import { whatsappOrderUrl } from "../lib/whatsapp";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 
 export function ProductPage() {
