@@ -52,10 +52,14 @@ export function ProductCard({ product }: { product: Product }) {
     return () => clearInterval(interval);
   }, [isHovered, uniqueImages.length]);
 
+  const [isHeartAnimating, setIsHeartAnimating] = useState(false);
+
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsHeartAnimating(true);
     toggleWishlist(product);
+    setTimeout(() => setIsHeartAnimating(false), 300);
   };
 
   const handleWhatsAppOrderClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -117,11 +121,14 @@ export function ProductCard({ product }: { product: Product }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link to={`/shop/${product.id}`} className="relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-stone-100 block">
-        <img
+        <motion.img
           src={uniqueImages[currentImageIdx] || product.image}
           alt={product.name}
           loading="lazy"
-          className={`h-full w-full object-cover object-top transition-all duration-500 ${!inStock ? "grayscale opacity-50" : ""}`}
+          className={`h-full w-full object-cover object-top ${!inStock ? "grayscale opacity-50" : ""}`}
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.2 }}
+          style={{ transform: 'translateZ(0)' }}
         />
 
         {/* Image Pagination Dots */}
@@ -145,37 +152,41 @@ export function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* Floating Wishlist Heart Button */}
-        <button
+        <motion.button
           type="button"
           onClick={handleWishlistClick}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md transition hover:scale-110 cursor-pointer z-10"
+          className="absolute right-3 top-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md cursor-pointer z-10"
           aria-label="Wishlist toggle"
+          whileTap={{ scale: 0.9 }}
+          animate={isHeartAnimating ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+          transition={{ duration: 0.3 }}
+          style={{ transform: 'translateZ(0)' }}
         >
           <Heart
-            className={`h-4 w-4 transition-colors ${
+            className={`h-5 w-5 transition-colors ${
               isWishlisted ? "fill-[#ff3e6c] text-[#ff3e6c]" : "text-stone-600 hover:text-stone-900"
             }`}
           />
-        </button>
+        </motion.button>
 
-        {/* Compact Myntra-Style Hover Overlay (Takes up only bottom 35% so image is clear) */}
+        {/* Compact Myntra-Style Hover Overlay (Takes up only bottom 25% so image is clear) */}
         <AnimatePresence>
           {isHovered && (
             <motion.div
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-md px-2.5 py-2 border-t border-stone-200 shadow-md z-20"
+              transition={{ duration: 0.2, ease: [0.4, 0.0, 0.2, 1] }}
+              className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-md px-2 py-1.5 border-t border-stone-200 shadow-md z-20"
               onClick={(e) => e.preventDefault()}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold text-stone-500 uppercase">Sizes:</span>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[9px] font-bold text-stone-500 uppercase">Sizes:</span>
               </div>
 
-              {/* Compact Size Pills */}
+              {/* Compact Size Pills with proper touch targets */}
               {product.sizes && product.sizes.length > 0 ? (
-                <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                <div className="flex items-center gap-0.5 overflow-x-auto pb-0 scrollbar-none">
                   {product.sizes.map((s) => (
                     <button
                       key={s}
@@ -184,7 +195,7 @@ export function ProductCard({ product }: { product: Product }) {
                         e.preventDefault();
                         setSelectedSize(s);
                       }}
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition cursor-pointer shrink-0 ${
+                      className={`rounded px-1 py-0.5 text-[9px] font-bold transition cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center ${
                         selectedSize === s
                           ? "bg-[#282c3f] text-white shadow-xs"
                           : "bg-stone-100 text-stone-700 hover:bg-stone-200"
@@ -195,7 +206,7 @@ export function ProductCard({ product }: { product: Product }) {
                   ))}
                 </div>
               ) : (
-                <span className="text-[10px] text-stone-500 font-medium">Standard Fit</span>
+                <span className="text-[9px] text-stone-500 font-medium">Standard Fit</span>
               )}
             </motion.div>
           )}
@@ -252,15 +263,16 @@ export function ProductCard({ product }: { product: Product }) {
             Details <ArrowRight className="h-3 w-3" />
           </Link>
 
-          <a
+          <motion.a
             href="#order"
             onClick={handleWhatsAppOrderClick}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-bold tracking-wide text-white shadow-xs hover:bg-[#20ba59] active:scale-95 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-bold tracking-wide text-white shadow-xs hover:bg-[#20ba59] transition-all cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            whileTap={{ scale: 0.95 }}
           >
             <MessageCircle className="h-3 w-3 fill-current" /> WhatsApp
-          </a>
+          </motion.a>
         </div>
       </div>
     </motion.article>

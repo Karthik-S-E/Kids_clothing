@@ -16,12 +16,15 @@ type CartState = {
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  badgeAnimate: boolean;
+  triggerBadgeAnimation: () => void;
 };
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      badgeAnimate: false,
       addItem: (product, size) => {
         const existingItem = get().items.find(
           (item) => item.product.id === product.id && item.size === size
@@ -37,6 +40,9 @@ export const useCartStore = create<CartState>()(
         } else {
           set({ items: [...get().items, { product, size, quantity: 1 }] });
         }
+        // Trigger badge animation
+        set({ badgeAnimate: true });
+        setTimeout(() => set({ badgeAnimate: false }), 200);
       },
       removeItem: (productId, size) => {
         set({
@@ -68,9 +74,17 @@ export const useCartStore = create<CartState>()(
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },
+      triggerBadgeAnimation: () => {
+        set({ badgeAnimate: true });
+        setTimeout(() => set({ badgeAnimate: false }), 200);
+      },
     }),
     {
       name: "kandamma.cart",
+      partialize: (state) => ({ 
+        items: state.items,
+        // Don't persist badgeAnimate state
+      }),
     }
   )
 );

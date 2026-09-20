@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -9,6 +10,7 @@ import {
 import { useProductStore } from "../store/productStore";
 import { formatINR } from "../lib/formatINR";
 import { useWishlistStore } from "../store/wishlistStore";
+import { getAnimationProps } from "../lib/motion";
 
 // Vector Indian Flag component to render consistently across all desktop and mobile platforms
 function IndiaFlag({ className = "h-3.5 w-5" }: { className?: string }) {
@@ -102,13 +104,6 @@ export function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#faf6f2] font-['Poppins',sans-serif] text-[#1d1d1b] antialiased">
       
-      {/* 1. Banner with Express Delivery and Vector Indian Flags */}
-      <div className="flex items-center justify-center gap-2.5 bg-[#f6b49e] px-4 py-2 text-center text-[12.5px] font-medium tracking-wide text-[#1d1d1b]">
-        <IndiaFlag />
-        <span>Free Express Delivery Across India on Orders Over ₹999</span>
-        <IndiaFlag />
-      </div>
-
       {/* 2. Full Bleed Editorial Hero with Vintage Gradient Overlay */}
       <section className="relative h-[65vh] sm:h-[78vh] lg:h-[84vh] w-full overflow-hidden bg-stone-900">
         <div className="relative h-full w-full">
@@ -122,22 +117,70 @@ export function HomePage() {
           <div className="absolute inset-0 bg-[#f6b49e]/10 mix-blend-color" />
         </div>
 
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center text-white">
-          <p className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/90 uppercase drop-shadow-xs">
-            {slide.subTitle}
-          </p>
-          
-          <h1 className="max-w-3xl font-serif text-3xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-tight drop-shadow-md">
-            {slide.title}
-          </h1>
-
-          <Link
-            to={slide.link}
-            className="mt-8 inline-block rounded-none bg-white px-8 py-3.5 text-xs font-bold tracking-[0.2em] text-[#1d1d1b] shadow-xl transition-all duration-200 hover:bg-[#1d1d1b] hover:text-white"
+        <motion.div 
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center text-white"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.15,
+                delayChildren: 0.3,
+              },
+            },
+          }}
+        >
+          <motion.p 
+            className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/90 uppercase drop-shadow-xs"
+            {...getAnimationProps({
+              variants: {
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0.0, 0.2, 1] } },
+              },
+            })}
           >
-            {slide.buttonText}
-          </Link>
-        </div>
+            {slide.subTitle}
+          </motion.p>
+          
+          <motion.h1 
+            className="max-w-3xl font-serif text-3xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-tight drop-shadow-md"
+            {...getAnimationProps({
+              variants: {
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { 
+                  opacity: 1, 
+                  scale: 1,
+                  transition: { 
+                    type: "spring",
+                    damping: 15,
+                    stiffness: 300,
+                    duration: 0.6 
+                  } 
+                },
+              },
+            })}
+          >
+            {slide.title}
+          </motion.h1>
+
+          <motion.div 
+            {...getAnimationProps({
+              variants: {
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0.0, 0.2, 1] } },
+              },
+            })}
+          >
+            <Link
+              to={slide.link}
+              className="mt-8 inline-block rounded-none bg-white px-8 py-3.5 text-xs font-bold tracking-[0.2em] text-[#1d1d1b] shadow-xl transition-all duration-200 hover:bg-[#1d1d1b] hover:text-white"
+            >
+              {slide.buttonText}
+            </Link>
+          </motion.div>
+        </motion.div>
 
         <div className="absolute bottom-5 left-0 right-0 z-20 flex items-center justify-center gap-4 text-white">
           <button
@@ -224,8 +267,22 @@ export function HomePage() {
 
       {/* 4. Editorial Product Grid (Clean Myntra-style Wishlist Cards) */}
       <section className="mx-auto max-w-7xl px-6 py-8 w-full">
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-          {allProducts.slice(0, 8).map((product) => {
+        <motion.div 
+          className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+              },
+            },
+          }}
+        >
+          {allProducts.slice(0, 8).map((product, index) => {
             const isWishlisted = isInWishlist(product.id);
 
             // Dynamic discount math using admin's discountPercent
@@ -242,7 +299,18 @@ export function HomePage() {
             };
 
             return (
-              <div key={product.id} className="group flex flex-col text-left">
+              <motion.div 
+                key={product.id} 
+                className="group flex flex-col text-left"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0,
+                    transition: { duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }
+                  },
+                }}
+              >
                 {/* Product Image Frame */}
                 <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#eee6de]">
                   <Link to={`/shop/${product.id}`} className="block h-full w-full">
@@ -260,18 +328,19 @@ export function HomePage() {
                   </span>
 
                   {/* Myntra-Style Floating Wishlist Heart */}
-                  <button
+                  <motion.button
                     type="button"
                     onClick={handleWishlist}
-                    className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md transition hover:scale-110 cursor-pointer"
+                    className="absolute right-2.5 top-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md cursor-pointer"
                     aria-label="Wishlist toggle"
+                    whileTap={{ scale: 0.9 }}
                   >
                     <Heart
-                      className={`h-4 w-4 transition-colors ${
+                      className={`h-5 w-5 transition-colors ${
                         isWishlisted ? "fill-[#ff3e6c] text-[#ff3e6c]" : "text-stone-600 hover:text-stone-900"
                       }`}
                     />
-                  </button>
+                  </motion.button>
                 </div>
 
                 {/* Product Typography & Pricing */}
@@ -303,10 +372,10 @@ export function HomePage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </section>
 
       {/* 5. Minimalist Heritage Story Banner */}

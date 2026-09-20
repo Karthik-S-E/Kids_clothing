@@ -3,18 +3,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-display: "Cormorant Garamond", serif;
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   
-  /* Design Tokens - Colors */
-  --color-gold: #8a6b3f;
-  --color-gold-light: #c4a882;
-  --color-gold-dark: #6f5738;
+  /* Design Tokens - Colors (Kandamma Kids Brand) */
+  --color-canvas: #F8F4EF;
+  --color-primary-text: #1D1B19;
+  --color-blush-pink: #F8BBD0;
+  --color-terracotta: #C27A6A;
+  --color-antique-gold: #D9B382;
+  
+  /* Legacy color support */
+  --color-gold: #D9B382;
+  --color-gold-light: #E8C89A;
+  --color-gold-dark: #B89B68;
   --color-peacock: #526b66;
   --color-peacock-light: #91aaa3;
-  --color-ink: #232323;
-  --color-ivory: #f4f1eb;
-  --color-cream: #fbfaf7;
+  --color-ink: #1D1B19;
+  --color-ivory: #F8F4EF;
+  --color-cream: #FAF7F2;
   --color-lavender: #aaa59d;
   --color-forest: #252824;
   --color-emerald: #6d8779;
@@ -40,12 +47,15 @@
   --radius-3xl: 2rem;
   --radius-pill: 9999px;
   
-  /* Design Tokens - Motion */
+  /* Design Tokens - Motion (Performance Optimized) */
+  --ease-natural: cubic-bezier(0.4, 0.0, 0.2, 1);
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-micro: 150ms;
   --duration-fast: 200ms;
-  --duration-medium: 500ms;
-  --duration-slow: 800ms;
+  --duration-medium: 300ms;
+  --duration-slow: 500ms;
+  --duration-section: 400ms;
   
   /* Design Tokens - Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -78,25 +88,25 @@
 }
 
 :root {
-  /* Only Background is Pop Barbie/Pastel Pink - Fonts & Gold Retained */
-  --background: #ffb6c1;
+  /* Kandamma Kids Brand Colors */
+  --background: #F8F4EF;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
-  --text-primary: #252525;
+  --text-primary: #1D1B19;
   --text-secondary: #5a5255;
   --text-muted: #7a7074;
-  --accent-primary: #8a6b3f;
-  --accent-secondary: #526b66;
-  --border: rgba(255, 255, 255, 0.6);
-  --shadow-color: rgba(236, 72, 153, 0.18);
-  --overlay: rgba(26, 21, 35, 0.4);
+  --accent-primary: #F8BBD0;
+  --accent-secondary: #C27A6A;
+  --border: rgba(194, 122, 106, 0.2);
+  --shadow-color: rgba(29, 27, 25, 0.1);
+  --overlay: rgba(29, 27, 25, 0.4);
   --success: #10b981;
   --danger: #ef4444;
   
-  /* Vibrant Blurred Pop Pink Backdrops */
-  --bg-gradient-1: radial-gradient(1000px 600px at 15% -10%, #ff80b5, transparent 65%);
-  --bg-gradient-2: radial-gradient(850px 550px at 105% 20%, #ff69b4, transparent 60%);
-  --bg-gradient-3: radial-gradient(950px 650px at 50% 120%, #ff94c2, transparent 65%);
+  /* Heritage Blurred Backdrops */
+  --bg-gradient-1: radial-gradient(1000px 600px at 15% -10%, #F8BBD0, transparent 65%);
+  --bg-gradient-2: radial-gradient(850px 550px at 105% 20%, #C27A6A, transparent 60%);
+  --bg-gradient-3: radial-gradient(950px 650px at 50% 120%, #D9B382, transparent 65%);
   
   color-scheme: light;
 }
@@ -469,4 +479,153 @@ body::before {
 .btn-admin-sm-danger:hover {
   border-color: rgb(248, 113, 113);
   background: rgba(239, 68, 68, 0.1);
+}
+
+/* Motion System & Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-kenburns,
+  .whatsapp-glow {
+    animation: none !important;
+  }
+}
+
+/* GPU Accelerated Motion Utilities */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Micro-interaction timing */
+.hover-zoom {
+  transition: transform var(--duration-fast) var(--ease-natural);
+}
+
+.hover-zoom:hover {
+  transform: scale(1.05);
+}
+
+/* Touch target compliance */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Header scroll states */
+.header-scrolled {
+  transform: scale(0.8);
+  height: 60px;
+}
+
+.header-default {
+  transform: scale(1);
+  height: 80px;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+.stagger-4 { animation-delay: 400ms; }
+.stagger-5 { animation-delay: 500ms; }
+
+/* Ambient sway animation (desktop only) */
+@keyframes ambient-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(3px) rotate(1deg); }
+  75% { transform: translateX(-3px) rotate(-1deg); }
+}
+
+.ambient-sway {
+  animation: ambient-sway 6s ease-in-out infinite;
+}
+
+@media (max-width: 1023px) {
+  .ambient-sway {
+    animation: none;
+  }
+}
+
+/* Pulse animation for active states */
+@keyframes pulse-active {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.pulse-active {
+  animation: pulse-active 0.3s ease-in-out;
+}
+
+/* Drawer slide animations */
+.drawer-enter {
+  transform: translateX(100%);
+}
+
+.drawer-enter-active {
+  transform: translateX(0);
+  transition: transform var(--duration-section) var(--ease-natural);
+}
+
+.drawer-exit {
+  transform: translateX(0);
+}
+
+.drawer-exit-active {
+  transform: translateX(100%);
+  transition: transform var(--duration-section) var(--ease-natural);
+}
+
+/* Timeline connector animation */
+@keyframes grow-connector {
+  from { height: 0; }
+  to { height: 100%; }
+}
+
+.grow-connector {
+  animation: grow-connector var(--duration-slow) var(--ease-natural) forwards;
+}
+
+/* Heart fill animation */
+@keyframes heart-fill {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.heart-animate {
+  animation: heart-fill 0.3s var(--ease-natural);
+}
+
+/* Cart badge animation */
+@keyframes badge-bump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.badge-bump {
+  animation: badge-bump 0.2s var(--ease-natural);
+}
+
+/* Thumbnail fly to cart animation */
+@keyframes fly-to-cart {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2) translate(200px, -200px);
+    opacity: 0;
+  }
+}
+
+.fly-to-cart {
+  animation: fly-to-cart 0.4s var(--ease-natural) forwards;
 }

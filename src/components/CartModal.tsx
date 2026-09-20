@@ -68,6 +68,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             onClick={onClose}
             className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm"
           />
@@ -75,7 +76,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            transition={{ duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
             className="fixed right-0 top-0 z-[var(--z-navigation)] h-full w-full max-w-md bg-[var(--background)] shadow-2xl"
           >
             <div className="flex h-full flex-col">
@@ -83,7 +84,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <h2 className="font-display text-3xl">Your Bag</h2>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 hover:bg-[var(--border)] transition-colors cursor-pointer"
+                  className="rounded-full p-2 hover:bg-[var(--border)] transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -120,7 +121,7 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity - 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
+                              className="w-12 h-12 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
                             >
                               -
                             </button>
@@ -129,13 +130,13 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                               onClick={() =>
                                 updateQuantity(item.product.id, item.size, item.quantity + 1)
                               }
-                              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
+                              className="w-12 h-12 rounded-full border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent-primary)] transition-colors cursor-pointer"
                             >
                               +
                             </button>
                             <button
                               onClick={() => removeItem(item.product.id, item.size)}
-                              className="ml-auto text-sm text-red-400 hover:text-red-300 cursor-pointer"
+                              className="ml-auto text-sm text-red-400 hover:text-red-300 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
                             >
                               Remove
                             </button>

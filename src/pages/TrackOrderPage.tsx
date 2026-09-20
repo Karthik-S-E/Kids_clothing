@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { formatINR } from "../lib/formatINR";
 import { useAuth, ADMIN_EMAIL } from "../context/AuthContext";
+import { prefersReducedMotion } from "../lib/motion";
 import { 
   Search, 
   Truck, 
@@ -233,11 +235,13 @@ export function TrackOrderPage() {
                     <div className="py-4">
                       <div className="relative flex items-center justify-between">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 w-full bg-stone-200 z-0" />
-                        <div
-                          className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-600 transition-all duration-500 z-0"
-                          style={{
+                        <motion.div
+                          className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-600 z-0"
+                          initial={{ width: 0 }}
+                          animate={{
                             width: `${Math.max(0, (Math.min(currentStepIdx, 4) / 4) * 100)}%`,
                           }}
+                          transition={{ duration: prefersReducedMotion() ? 0.01 : 0.8, ease: [0.4, 0.0, 0.2, 1] }}
                         />
 
                         {STATUS_STEPS.map((step, idx) => {
@@ -245,19 +249,23 @@ export function TrackOrderPage() {
                           const isCurrent = currentStepIdx === idx;
                           return (
                             <div key={step} className="relative z-10 flex flex-col items-center">
-                              <div
-                                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all ${
+                              <motion.div
+                                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
                                   isDone
                                     ? "border-emerald-600 bg-emerald-600 text-white"
                                     : "border-stone-300 bg-white text-stone-400"
                                 }`}
+                                animate={isCurrent && !prefersReducedMotion() ? { 
+                                  scale: [1, 1.1, 1],
+                                } : { scale: 1 }}
+                                transition={{ duration: 1.5, repeat: isCurrent && !prefersReducedMotion() ? Infinity : 0, ease: "easeInOut" }}
                               >
                                 {isDone ? (
                                   <CheckCircle2 className="h-4 w-4" />
                                 ) : (
                                   <span className="text-[10px] font-bold">{idx + 1}</span>
                                 )}
-                              </div>
+                              </motion.div>
                               <span
                                 className={`mt-2 text-[10px] text-center font-medium max-w-[65px] ${
                                   isCurrent

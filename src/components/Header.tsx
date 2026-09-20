@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ShoppingBag, User, Heart, Menu, X, Package, LogOut, ShieldCheck, UserCheck, Truck } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
@@ -9,6 +10,7 @@ import { AuthModal } from "./AuthModal";
 import { ProfileModal } from "./ProfileModal";
 import { WishlistDrawer } from "./WishlistDrawer"; // Import directly so Header can control it as a fallback
 import { social } from "../config";
+import { useScrollState } from "../hooks/useScrollState";
 
 interface HeaderProps {
   onOpenCart?: () => void;
@@ -52,9 +54,11 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
   const location = useLocation();
   const { user, profile, logout } = useAuth();
+  const isScrolled = useScrollState(50); // Condense header when scroll past 50px
 
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const badgeAnimate = useCartStore((s) => s.badgeAnimate);
 
   const wishlistItems = useWishlistStore((s) => s.items);
   const wishlistCount = wishlistItems.length;
@@ -103,15 +107,23 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8E2D9]">
-        <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6">
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 bg-[#F8F4EF]/95 backdrop-blur-md border-b border-[#E8E2D9] transition-all duration-300 ${
+          isScrolled ? 'h-[56px]' : 'h-[64px]'
+        }`}
+      >
+        <div 
+          className={`mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-full transition-transform duration-300 ${
+            isScrolled ? 'scale-[0.95]' : 'scale-100'
+          }`}
+        >
           
           {/* Left Side: Hamburger (Mobile) + Brand Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 text-[#281E15] hover:opacity-70 transition cursor-pointer"
+              className="md:hidden p-2 text-[#281E15] hover:opacity-70 transition cursor-pointer"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -122,18 +134,18 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 <img
                   src={settings.logoUrl}
                   alt={settings.name}
-                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0"
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0 transition-transform duration-300"
                 />
               ) : (
-                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0">
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0 transition-transform duration-300">
                   KK
                 </div>
               )}
               <div className="flex flex-col text-left justify-center">
-                <span className="font-serif text-lg sm:text-xl tracking-tight text-[#281E15] leading-none">
+                <span className="font-serif text-lg sm:text-xl tracking-tight text-[#281E15] leading-none transition-transform duration-300">
                   {settings.name || "Kandamma Kids"}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-medium text-[#786E64] tracking-normal mt-0.5 leading-none">
+                <span className="text-[10px] sm:text-[11px] font-medium text-[#786E64] tracking-normal mt-0.5 leading-none transition-transform duration-300">
                   ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
                 </span>
               </div>
@@ -177,12 +189,12 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center space-x-4 sm:space-x-5 text-[#281E15]">
+          <div className="flex items-center gap-1 text-[#281E15]">
             <a
               href={social.instagram}
               target="_blank"
               rel="noreferrer"
-              className="hover:opacity-70 transition-opacity"
+              className="hover:opacity-70 transition-opacity p-1.5"
               aria-label="Instagram"
             >
               <InstagramIcon className="h-5 w-5" />
@@ -192,7 +204,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             <button
               type="button"
               onClick={handleWishlistClick}
-              className="relative hover:opacity-70 transition-opacity cursor-pointer p-0.5"
+              className="relative hover:opacity-70 transition-opacity cursor-pointer p-1.5"
               aria-label="Wishlist"
               title="Wishlist"
             >
@@ -219,7 +231,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
-                  className="hover:opacity-70 transition-opacity cursor-pointer p-0.5"
+                  className="hover:opacity-70 transition-opacity cursor-pointer p-1.5"
                   aria-label="Sign In or Register"
                   title="Sign In"
                 >
@@ -299,14 +311,19 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             <button
               type="button"
               onClick={onOpenCart}
-              className="relative cursor-pointer hover:opacity-70 transition-opacity"
+              className="relative cursor-pointer hover:opacity-70 transition-opacity p-1.5"
               aria-label="Open cart"
             >
               <ShoppingBag className="h-5 w-5" />
               {totalCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white">
+                <motion.span 
+                  className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white"
+                  animate={badgeAnimate ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ transform: 'translateZ(0)' }}
+                >
                   {totalCount}
-                </span>
+                </motion.span>
               )}
             </button>
           </div>
