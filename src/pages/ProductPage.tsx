@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useId, useRef, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { 
   Star, 
@@ -11,6 +11,7 @@ import {
   Check, 
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   X
 } from "lucide-react";
 import { formatINR } from "../lib/formatINR";
@@ -35,14 +36,42 @@ export function ProductPage() {
     : [];
 
   const [size, setSize] = useState<string>(product?.sizes[0] ?? "");
-  const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] ?? "");
+  const [selectedColor, setSelectedColor] = useState<string>("");
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [pincode, setPincode] = useState("");
   const [pincodeStatus, setPincodeStatus] = useState<string | null>(null);
 
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const colorGroupId = useId();
   const sizeGroupId = useId();
+
+  const checkScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", checkScrollPosition);
+      window.addEventListener("resize", checkScrollPosition);
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", checkScrollPosition);
+      }
+      window.removeEventListener("resize", checkScrollPosition);
+    };
+  }, [availableColors]);
 
   if (!product) {
     return (
@@ -63,8 +92,24 @@ export function ProductPage() {
   const inStock = product.stockStatus ?? true;
   const quantity = product.stockQuantity ?? 5;
 
-  const activeImage =
-    (selectedColor && product.colorImages?.[selectedColor]) || product.image;
+  let displayImages: string[] = [];
+  if (selectedColor) {
+    const colorList = product.colorImagesList?.[selectedColor];
+    if (colorList && colorList.length > 0) {
+      displayImages = colorList;
+    } else {
+      const singleColorImg = product.colorImages?.[selectedColor];
+      displayImages = singleColorImg ? [singleColorImg] : [];
+    }
+  }
+  
+  if (displayImages.length === 0) {
+    if (product.images && product.images.length > 0) {
+      displayImages = product.images;
+    } else if (product.image) {
+      displayImages = [product.image];
+    }
+  }
 
   const discountPercent = Number(product.discountPercent) || 0;
   const hasDiscount = discountPercent > 0 && discountPercent < 100;
@@ -79,6 +124,16 @@ export function ProductPage() {
   ]
     .filter(Boolean)
     .join(" ");
+
+  const scrollThumbnails = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 160;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const handleAddToBag = () => {
     if (!inStock) return;
@@ -115,7 +170,7 @@ export function ProductPage() {
             price: product.price,
             size: selectedSize,
             quantity: 1,
-            image: activeImage,
+            image: displayImages[0] || product.image,
           },
         ],
         totalAmount: product.price,
@@ -129,7 +184,6 @@ export function ProductPage() {
         },
         createdAt: serverTimestamp(),
       });
-      console.log("SUCCESSFULLY SAVED PRODUCT PAGE ORDER:", orderId);
     } catch (err: any) {
       console.error("FIRESTORE WRITE FAILED:", err);
       alert("Database error: " + (err.message || "Could not save order. Check Firestore rules."));
@@ -160,72 +214,41 @@ export function ProductPage() {
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="mb-6 text-xs text-stone-700 font-medium">
         <ol className="flex flex-wrap items-center gap-1.5">
-          <li>
-            <Link to="/" className="transition hover:text-black hover:underline">Home</Link>
-          </li>
+          <li><Link to="/" className="transition hover:text-black hover:underline">Home</Link></li>
           <ChevronRight className="h-3 w-3 text-stone-500" aria-hidden="true" />
-          <li>
-            <Link to="/shop" className="transition hover:text-black hover:underline">Ethnic Wear</Link>
-          </li>
+          <li><Link to="/shop" className="transition hover:text-black hover:underline">Ethnic Wear</Link></li>
           <ChevronRight className="h-3 w-3 text-stone-500" aria-hidden="true" />
-          <li>
-            <Link to={`/shop?gender=${product.gender}`} className="transition hover:text-black hover:underline">
-              {product.gender} Clothing
-            </Link>
-          </li>
+          <li><Link to={`/shop?gender=${product.gender}`} className="transition hover:text-black hover:underline">{product.gender} Clothing</Link></li>
           <ChevronRight className="h-3 w-3 text-stone-500" aria-hidden="true" />
-          <li className="font-bold text-stone-900 truncate max-w-[240px]" aria-current="page">
-            {product.name}
-          </li>
+          <li className="font-bold text-stone-900 truncate max-w-[240px]" aria-current="page">{product.name}</li>
         </ol>
       </nav>
 
+      {/* Main Two-Panel Responsive Layout */}
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-start">
-        {/* Image Showcase */}
-        <section aria-label="Product Media Showcase" className="lg:col-span-6 flex flex-col gap-4">
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-white border border-stone-300 shadow-sm">
-            <img
-              src={activeImage}
-              alt={`${product.name} - Front View`}
-              fetchPriority="high"
-              loading="eager"
-              className={`h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105 ${
-                !inStock ? "grayscale opacity-60" : ""
-              }`}
-            />
-            {!inStock && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <span className="rounded bg-black px-4 py-2 text-xs font-bold uppercase tracking-widest text-white">
-                  Out of Stock
-                </span>
-              </div>
-            )}
-          </div>
-
-          {availableColors.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              {availableColors.map((clr) => {
-                const thumb = product.colorImages?.[clr] || product.image;
-                const isSelected = selectedColor === clr;
-                return (
-                  <button
-                    key={clr}
-                    type="button"
-                    onClick={() => setSelectedColor(clr)}
-                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all cursor-pointer ${
-                      isSelected ? "border-[#ff3e6c] ring-2 ring-[#ff3e6c]/30" : "border-stone-300 hover:border-stone-700"
-                    }`}
-                  >
-                    <img src={thumb} alt={clr} className="h-full w-full object-cover" />
-                  </button>
-                );
-              })}
+        
+        {/* Left Panel: Fully Responsive Vertical Image Stack (No clipping, natural height) */}
+        <section aria-label="Product Media Showcase" className="lg:col-span-6 flex flex-col gap-4 w-full">
+          {displayImages.map((imgUrl, idx) => (
+            <div key={idx} className="w-full overflow-hidden rounded-xl bg-white border border-stone-200 shadow-xs">
+              <img
+                src={imgUrl}
+                alt={`${product.name} - View ${idx + 1}`}
+                fetchPriority={idx === 0 ? "high" : "auto"}
+                loading={idx === 0 ? "eager" : "lazy"}
+                className={`w-full h-auto object-cover block transition-transform duration-300 hover:scale-[1.01] ${!inStock ? "grayscale opacity-60" : ""}`}
+              />
+              {!inStock && idx === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <span className="rounded bg-black px-4 py-2 text-xs font-bold uppercase tracking-widest text-white">Out of Stock</span>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </section>
 
-        {/* Product Purchasing Options */}
-        <section aria-label="Product Purchasing Options" className="lg:col-span-6 flex flex-col gap-6 bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm">
+        {/* Right Panel: Sticky Product Purchasing Options */}
+        <section aria-label="Product Purchasing Options" className="lg:col-span-6 flex flex-col gap-6 bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm lg:sticky lg:top-24">
           {/* Header & Quality Tag */}
           <div className="border-b border-stone-200 pb-4">
             <h1 className="text-2xl font-black tracking-tight text-stone-900">Kandamma Kids</h1>
@@ -234,68 +257,97 @@ export function ProductPage() {
             <div className="mt-3 inline-flex items-center gap-2 rounded border border-stone-300 bg-stone-50 px-2.5 py-1 text-xs shadow-2xs">
               <span className="font-extrabold text-stone-900">4.8</span>
               <Star className="h-3.5 w-3.5 fill-[#03a685] text-[#03a685]" />
-              <span className="border-l border-stone-300 pl-2 font-medium text-stone-700">
-                Verified Artisan Quality
-              </span>
+              <span className="border-l border-stone-300 pl-2 font-medium text-stone-700">Verified Artisan Quality</span>
             </div>
           </div>
 
           {/* Pricing */}
           <div className="flex flex-col gap-1 border-b border-stone-200 pb-4">
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-stone-900">
-                {formatINR(product.price)}
-              </span>
+              <span className="text-3xl font-extrabold text-stone-900">{formatINR(product.price)}</span>
               {hasDiscount && (
                 <>
-                  <span className="text-base text-stone-500 line-through font-medium">
-                    MRP {formatINR(mrp)}
-                  </span>
-                  <span className="text-base font-bold text-amber-700">
-                    ({discountPercent}% OFF)
-                  </span>
+                  <span className="text-base text-stone-500 line-through font-medium">MRP {formatINR(mrp)}</span>
+                  <span className="text-base font-bold text-amber-700">({discountPercent}% OFF)</span>
                 </>
               )}
             </div>
-            <span className="text-xs font-bold text-[#03a685] tracking-wide uppercase">
-              inclusive of all taxes
-            </span>
+            <span className="text-xs font-bold text-[#03a685] tracking-wide uppercase">inclusive of all taxes</span>
           </div>
 
-          {/* Color Variations */}
+          {/* Flipkart-Style Horizontal Scrollable Color Selector with Dynamic Arrows */}
           {availableColors.length > 0 && (
             <div className="flex flex-col gap-2.5">
               <span id={colorGroupId} className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                More Colors: <span className="font-semibold text-stone-700 normal-case capitalize">{selectedColor}</span>
+                More Colors: <span className="font-semibold text-[#ff3e6c] normal-case capitalize">{selectedColor || "None Selected"}</span>
               </span>
 
-              <div role="radiogroup" aria-labelledby={colorGroupId} className="flex flex-wrap gap-2.5">
-                {availableColors.map((clr) => {
-                  const thumb = product.colorImages?.[clr] || product.image;
-                  const isSelected = selectedColor === clr;
+              <div className="relative group">
+                {canScrollLeft && (
+                  <button
+                    type="button"
+                    onClick={() => scrollThumbnails("left")}
+                    className="absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md text-stone-700 hover:bg-stone-100 hover:text-black transition cursor-pointer border border-stone-200"
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                )}
 
-                  return (
-                    <button
-                      key={clr}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      onClick={() => setSelectedColor(clr)}
-                      className={`group relative h-16 w-12 overflow-hidden rounded border transition-all cursor-pointer ${
-                        isSelected 
-                          ? "border-2 border-[#ff3e6c] ring-2 ring-[#ff3e6c]/40" 
-                          : "border-stone-300 hover:border-stone-800"
-                      }`}
-                    >
-                      <img src={thumb} alt={clr} className="h-full w-full object-cover" />
-                      {isSelected && (
-                        <span className="absolute bottom-0.5 right-0.5 rounded-full bg-[#ff3e6c] p-0.5 text-white">
-                          <Check className="h-2.5 w-2.5" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                <div
+                  ref={scrollContainerRef}
+                  role="radiogroup"
+                  aria-labelledby={colorGroupId}
+                  className="flex items-center gap-3 overflow-x-auto px-2 py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+                >
+                  {availableColors.map((clr) => {
+                    const thumb = product.colorImages?.[clr] || product.image;
+                    const isSelected = selectedColor === clr;
+
+                    return (
+                      <button
+                        key={clr}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        onClick={() => setSelectedColor(isSelected ? "" : clr)}
+                        style={{ width: "78px", minWidth: "78px", maxWidth: "78px", borderRadius: "14px", borderWidth: "1.6px" }}
+                        className={`relative flex flex-col items-center overflow-hidden transition-all cursor-pointer bg-stone-50 ${
+                          isSelected
+                            ? "border-[#111] ring-2 ring-black/20 shadow-md scale-[1.02]"
+                            : "border-stone-300 hover:border-stone-600"
+                        }`}
+                      >
+                        <div className="relative h-[95px] w-full flex items-center justify-center overflow-hidden bg-stone-100">
+                          <img src={thumb} alt={clr} className="h-full w-full object-cover object-center" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                              <span className="rounded-full bg-black text-white p-1">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-full py-1 px-1 bg-white text-center border-t border-stone-200">
+                          <span className={`text-[10px] font-bold block truncate capitalize ${isSelected ? "text-black" : "text-stone-700"}`}>
+                            {clr}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {canScrollRight && (
+                  <button
+                    type="button"
+                    onClick={() => scrollThumbnails("right")}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md text-stone-700 hover:bg-stone-100 hover:text-black transition cursor-pointer border border-stone-200"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -303,9 +355,7 @@ export function ProductPage() {
           {/* Size Selection */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span id={sizeGroupId} className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                Select Size
-              </span>
+              <span id={sizeGroupId} className="text-xs font-bold uppercase tracking-wider text-stone-900">Select Size</span>
               <button
                 type="button"
                 onClick={() => setSizeChartOpen(true)}
@@ -341,18 +391,12 @@ export function ProductPage() {
             <div className="mt-1">
               {inStock ? (
                 quantity <= 3 ? (
-                  <p className="text-xs font-bold text-amber-700">
-                    Hurry! Only {quantity} piece{quantity > 1 ? "s" : ""} left in stock.
-                  </p>
+                  <p className="text-xs font-bold text-amber-700">Hurry! Only {quantity} piece{quantity > 1 ? "s" : ""} left in stock.</p>
                 ) : (
-                  <p className="text-xs font-bold text-[#03a685]">
-                    In stock · Ready for dispatch
-                  </p>
+                  <p className="text-xs font-bold text-[#03a685]">In stock · Ready for dispatch</p>
                 )
               ) : (
-                <p className="text-xs font-bold text-red-600">
-                  Currently Out of Stock
-                </p>
+                <p className="text-xs font-bold text-red-600">Currently Out of Stock</p>
               )}
             </div>
           </div>
@@ -368,13 +412,9 @@ export function ProductPage() {
                     className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#ff3e6c] px-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-[#e7335e] active:scale-[0.98] cursor-pointer"
                   >
                     {addedFeedback ? (
-                      <>
-                        <Check className="h-4 w-4" /> Added
-                      </>
+                      <><Check className="h-4 w-4" /> Added</>
                     ) : (
-                      <>
-                        <ShoppingBag className="h-4 w-4" /> Add to Bag
-                      </>
+                      <><ShoppingBag className="h-4 w-4" /> Add to Bag</>
                     )}
                   </button>
 
@@ -442,9 +482,7 @@ export function ProductPage() {
 
           {/* Delivery Checker */}
           <div className="border-t border-stone-200 pt-5">
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-900 block mb-2">
-              Delivery Options
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-900 block mb-2">Delivery Options</span>
             <form onSubmit={handlePincodeCheck} className="flex items-center gap-2">
               <input
                 type="text"
@@ -468,30 +506,18 @@ export function ProductPage() {
             )}
 
             <div className="mt-4 space-y-2 text-xs font-medium text-stone-700">
-              <p className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-stone-900" /> Fast Delivery Across All of India
-              </p>
-              <p className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-stone-900" /> 100% Genuine Handcrafted Kids Wear
-              </p>
-              <p className="flex items-center gap-2">
-                <RotateCcw className="h-4 w-4 text-stone-900" /> Easy Size Exchange Assistance via WhatsApp
-              </p>
+              <p className="flex items-center gap-2"><Truck className="h-4 w-4 text-stone-900" /> Fast Delivery Across All of India</p>
+              <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-stone-900" /> 100% Genuine Handcrafted Kids Wear</p>
+              <p className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-stone-900" /> Easy Size Exchange Assistance via WhatsApp</p>
             </div>
           </div>
 
           {/* Specifications */}
           <div className="border-t border-stone-200 pt-5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2">
-              Product Details
-            </h2>
-            <p className="text-xs leading-relaxed text-stone-700 mb-4 font-normal">
-              {product.description}
-            </p>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2">Product Details</h2>
+            <p className="text-xs leading-relaxed text-stone-700 mb-4 font-normal">{product.description}</p>
 
-            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2.5">
-              Specifications
-            </h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2.5">Specifications</h3>
             <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-stone-200 pt-3 text-xs">
               <div>
                 <span className="text-stone-500 font-medium block">Design Number</span>
@@ -520,11 +546,7 @@ export function ProductPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl text-stone-900">
             <div className="flex items-center justify-between border-b border-stone-200 pb-3">
               <h3 className="text-base font-bold text-stone-900">Kandamma Kids Size Chart</h3>
-              <button
-                type="button"
-                onClick={() => setSizeChartOpen(false)}
-                className="rounded-full p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 cursor-pointer"
-              >
+              <button type="button" onClick={() => setSizeChartOpen(false)} className="rounded-full p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -550,11 +572,7 @@ export function ProductPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSizeChartOpen(false)}
-                className="rounded bg-[#ff3e6c] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#e7335e] cursor-pointer"
-              >
+              <button type="button" onClick={() => setSizeChartOpen(false)} className="rounded bg-[#ff3e6c] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#e7335e] cursor-pointer">
                 Got It
               </button>
             </div>

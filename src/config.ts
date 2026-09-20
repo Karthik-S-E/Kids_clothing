@@ -43,6 +43,7 @@ export type Product = {
   id: string;
   name: string;
   image: string;
+  images?: string[];
   price: number;
   discountPercent?: number; // Dynamic Admin Offer (e.g., 20 for 20% OFF, 0 for None)
   gender: Gender;
@@ -56,6 +57,7 @@ export type Product = {
   style?: string;
   occasion?: string;
   colorImages?: Record<string, string>;
+  colorImagesList?: Record<string, string[]>;
   meeshoUrl?: string;
   flipkartUrl?: string;
 };
@@ -71,6 +73,7 @@ export const initialProducts: Product[] = [
     id: "1",
     name: "Royal Blue Floral Lehenga Set",
     image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?q=80&w=1200&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?q=80&w=1200&auto=format&fit=crop"],
     price: 1899,
     discountPercent: 25,
     gender: "Girl",
@@ -86,6 +89,7 @@ export const initialProducts: Product[] = [
     id: "2",
     name: "Golden Zari Silk Kurta Set",
     image: "https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?q=80&w=1200&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?q=80&w=1200&auto=format&fit=crop"],
     price: 1499,
     discountPercent: 15,
     gender: "Boy",
@@ -101,6 +105,7 @@ export const initialProducts: Product[] = [
     id: "3",
     name: "Pastel Pink Party Gown",
     image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?q=80&w=1200&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?q=80&w=1200&auto=format&fit=crop"],
     price: 2199,
     discountPercent: 30,
     gender: "Girl",
@@ -116,6 +121,7 @@ export const initialProducts: Product[] = [
     id: "4",
     name: "Festive Embroidered Sherwani",
     image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?q=80&w=1200&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1503919545889-aef636e10ad4?q=80&w=1200&auto=format&fit=crop"],
     price: 1799,
     discountPercent: 20,
     gender: "Boy",

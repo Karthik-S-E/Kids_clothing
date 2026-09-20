@@ -7,10 +7,12 @@ import { useBrandStore } from "../store/brandStore";
 import { useAuth } from "../context/AuthContext";
 import { AuthModal } from "./AuthModal";
 import { ProfileModal } from "./ProfileModal";
+import { WishlistDrawer } from "./WishlistDrawer"; // Import directly so Header can control it as a fallback
 import { social } from "../config";
 
 interface HeaderProps {
   onOpenCart?: () => void;
+  onOpenWishlist?: () => void;
 }
 
 function getUserInitials(name?: string | null): string {
@@ -40,10 +42,11 @@ function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-export function Header({ onOpenCart }: HeaderProps) {
+export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [internalWishlistOpen, setInternalWishlistOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -82,13 +85,21 @@ export function Header({ onOpenCart }: HeaderProps) {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Derive display name: Profile > Firebase Auth > Fallback
   const rawDisplayName = profile?.displayName || user?.displayName;
   const displayName = rawDisplayName && rawDisplayName.trim()
     ? rawDisplayName.trim()
     : user?.email
     ? user.email.split("@")[0]
     : "Customer";
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onOpenWishlist) {
+      onOpenWishlist();
+    } else {
+      setInternalWishlistOpen(true);
+    }
+  };
 
   return (
     <>
@@ -177,10 +188,11 @@ export function Header({ onOpenCart }: HeaderProps) {
               <InstagramIcon className="h-5 w-5" />
             </a>
 
-            {/* Wishlist Link with Live Badge */}
-            <Link
-              to="/wishlist"
-              className="relative hover:opacity-70 transition-opacity"
+            {/* Wishlist Button Opening Drawer */}
+            <button
+              type="button"
+              onClick={handleWishlistClick}
+              className="relative hover:opacity-70 transition-opacity cursor-pointer p-0.5"
               aria-label="Wishlist"
               title="Wishlist"
             >
@@ -190,7 +202,7 @@ export function Header({ onOpenCart }: HeaderProps) {
                   {wishlistCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* User Profile / Authentication Menu */}
             <div className="relative" ref={dropdownRef}>
@@ -312,9 +324,13 @@ export function Header({ onOpenCart }: HeaderProps) {
               >
                 SHOP
               </Link>
-              <Link
-                to="/wishlist"
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center justify-between ${
+              <button
+                type="button"
+                onClick={(e) => {
+                  setMobileMenuOpen(false);
+                  handleWishlistClick(e);
+                }}
+                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center justify-between text-left cursor-pointer w-full ${
                   isActive("/wishlist") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
                 }`}
               >
@@ -324,7 +340,7 @@ export function Header({ onOpenCart }: HeaderProps) {
                     {wishlistCount}
                   </span>
                 )}
-              </Link>
+              </button>
               <Link
                 to="/track"
                 className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 ${
@@ -407,6 +423,16 @@ export function Header({ onOpenCart }: HeaderProps) {
 
       {/* Profile & Address Editor Modal */}
       <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+
+      {/* Fallback Wishlist Drawer rendered directly inside Header if parent didn't provide prop */}
+      {!onOpenWishlist && (
+        <WishlistDrawer 
+          isOpen={internalWishlistOpen} 
+          onClose={() => setInternalWishlistOpen(false)} 
+        />
+      )}
     </>
   );
 }
+
+export default Header;

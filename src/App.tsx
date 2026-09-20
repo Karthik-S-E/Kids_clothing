@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
@@ -13,11 +13,15 @@ import { AuthPage } from "./pages/AuthPage";
 import { AuthProvider } from "./context/AuthContext";
 import { useProductStore } from "./store/productStore";
 import { useThemeStore } from "./store/themeStore";
+import { WishlistDrawer } from "./components/WishlistDrawer";
 
 export default function App() {
   const hydrate = useProductStore((s) => s.hydrate);
   const setTheme = useThemeStore((s) => s.setTheme);
   const theme = useThemeStore((s) => s.theme);
+
+  // State to control the slide-over wishlist drawer globally from the header
+  const [wishlistOpen, setWishlistOpen] = useState(false);
 
   useEffect(() => {
     setTheme(theme);
@@ -27,8 +31,14 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* Pass down the wishlist drawer state handler so the header icon opens it */}
+        <WishlistDrawer 
+          isOpen={wishlistOpen} 
+          onClose={() => setWishlistOpen(false)} 
+        />
+
         <Routes>
-          <Route element={<Layout />}>
+          <Route element={<Layout onOpenWishlist={() => setWishlistOpen(true)} />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/shop/:id" element={<ProductPage />} />

@@ -11,7 +11,7 @@ import {
   Edit2,
   X,
   Box,
-  Ban,
+  Plus,
 } from "lucide-react";
 import {
   collection,
@@ -61,6 +61,7 @@ interface Order {
 const empty: ProductInput = {
   name: "",
   image: "",
+  images: [],
   price: 499,
   discountPercent: 20,
   gender: "Girl",
@@ -74,6 +75,7 @@ const empty: ProductInput = {
   style: "",
   occasion: "Birthday Parties, Weddings, Functions & Special Occasions",
   colorImages: {},
+  colorImagesList: {},
   meeshoUrl: "",
   flipkartUrl: "",
 };
@@ -89,6 +91,7 @@ export function AdminPage() {
   // Product Form State
   const [form, setForm] = useState<ProductInput>(empty);
   const [rawSizes, setRawSizes] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -314,25 +317,105 @@ export function AdminPage() {
   async function onMainFile(file?: File) {
     if (!file) return;
     const base64 = await compressAndConvert(file, 600, 0.7);
-    setForm((f) => ({ ...f, image: base64 }));
+    setForm((f) => {
+      const currentImages = f.images && f.images.length > 0 ? f.images : (f.image ? [f.image] : []);
+      return {
+        ...f,
+        image: f.image || base64,
+        images: [...currentImages, base64],
+      };
+    });
+  }
+
+  function handleAddImageUrl() {
+    if (!newImageUrl.trim()) return;
+    const url = newImageUrl.trim();
+    setForm((f) => {
+      const currentImages = f.images && f.images.length > 0 ? f.images : (f.image ? [f.image] : []);
+      return {
+        ...f,
+        image: f.image || url,
+        images: [...currentImages, url],
+      };
+    });
+    setNewImageUrl("");
+  }
+
+  function handleRemoveImage(index: number) {
+    setForm((f) => {
+      const imgs = [...(f.images || [])];
+      imgs.splice(index, 1);
+      return {
+        ...f,
+        images: imgs,
+        image: imgs[0] || "",
+      };
+    });
   }
 
   async function onColorFile(colorName: string, file?: File) {
     if (!file) return;
     const base64 = await compressAndConvert(file, 600, 0.7);
-    setForm((f) => ({
-      ...f,
-      colorImages: {
-        ...(f.colorImages || {}),
-        [colorName]: base64,
-      },
-    }));
+    setForm((f) => {
+      const currentList = f.colorImagesList?.[colorName] || [];
+      const updatedList = [...currentList, base64];
+      return {
+        ...f,
+        colorImages: {
+          ...(f.colorImages || {}),
+          [colorName]: base64,
+        },
+        colorImagesList: {
+          ...(f.colorImagesList || {}),
+          [colorName]: updatedList,
+        },
+      };
+    });
+  }
+
+  function handleAddColorImageUrl(colorName: string, urlVal: string) {
+    if (!urlVal.trim()) return;
+    setForm((f) => {
+      const currentList = f.colorImagesList?.[colorName] || [];
+      const updatedList = [...currentList, urlVal.trim()];
+      return {
+        ...f,
+        colorImages: {
+          ...(f.colorImages || {}),
+          [colorName]: f.colorImages?.[colorName] || urlVal.trim(),
+        },
+        colorImagesList: {
+          ...(f.colorImagesList || {}),
+          [colorName]: updatedList,
+        },
+      };
+    });
+  }
+
+  function handleRemoveColorImage(colorName: string, index: number) {
+    setForm((f) => {
+      const currentList = [...(f.colorImagesList?.[colorName] || [])];
+      currentList.splice(index, 1);
+      return {
+        ...f,
+        colorImagesList: {
+          ...(f.colorImagesList || {}),
+          [colorName]: currentList,
+        },
+        colorImages: {
+          ...(f.colorImages || {}),
+          [colorName]: currentList[0] || "",
+        },
+      };
+    });
   }
 
   function onEdit(product: Product) {
+    const initialImages = product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : []);
     setForm({
       name: product.name,
       image: product.image,
+      images: initialImages,
       price: product.price,
       discountPercent: product.discountPercent ?? 0,
       gender: product.gender,
@@ -346,6 +429,7 @@ export function AdminPage() {
       style: product.style || "",
       occasion: product.occasion || "Birthday Parties, Weddings, Functions & Special Occasions",
       colorImages: product.colorImages || {},
+      colorImagesList: product.colorImagesList || {},
       meeshoUrl: product.meeshoUrl || "",
       flipkartUrl: product.flipkartUrl || "",
     });
@@ -366,7 +450,8 @@ export function AdminPage() {
   function validate(): string[] {
     const errors: string[] = [];
     if (!form.name.trim()) errors.push("Product name is required.");
-    if (!form.image) errors.push("Product image is required (upload or URL).");
+    const allImgs = form.images && form.images.length > 0 ? form.images : (form.image ? [form.image] : []);
+    if (allImgs.length === 0) errors.push("At least one product image is required.");
     if (!form.description.trim()) errors.push("Description is required.");
     if (form.price <= 0) errors.push("Price must be greater than zero.");
     if ((form.discountPercent ?? 0) < 0 || (form.discountPercent ?? 0) >= 100) {
@@ -421,8 +506,12 @@ export function AdminPage() {
         .map((s) => s.trim().toUpperCase())
         .filter(Boolean);
 
+      const allImgs = form.images && form.images.length > 0 ? form.images : (form.image ? [form.image] : []);
+
       const payload: ProductInput = {
         ...form,
+        image: allImgs[0] || form.image,
+        images: allImgs,
         discountPercent: Number(form.discountPercent) || 0,
         ageRange: normaliseAgeRange(form.ageRange),
         sizes: parsedSizes,
@@ -786,28 +875,142 @@ export function AdminPage() {
                   </label>
                 </div>
 
-                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
-                  Default Main Image URL
-                  <input
-                    value={form.image.startsWith("data:") ? "" : form.image}
-                    onChange={(e) => setForm({ ...form, image: e.target.value })}
-                    placeholder="https://"
-                    className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-xs text-stone-900 focus:border-[#ff3e6c] outline-none"
-                  />
-                </label>
+                {/* MULTIPLE PRODUCT PHOTOS FOR HOME / SHOWCASE */}
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Multiple Gallery Photos (Home / Product Screen)
+                  </label>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="Paste image URL (https://...)"
+                      className="flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#ff3e6c]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddImageUrl}
+                      className="rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white uppercase tracking-wider hover:bg-stone-800 shrink-0 cursor-pointer"
+                    >
+                      Add URL
+                    </button>
+                  </div>
 
-                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
-                  Or upload main image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => onMainFile(e.target.files?.[0])}
-                    className="mt-1 w-full text-xs file:mr-4 file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white file:uppercase cursor-pointer"
-                  />
-                </label>
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer rounded-xl bg-stone-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-stone-700 transition">
+                      Upload Photos From Device
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => onMainFile(e.target.files?.[0])}
+                      />
+                    </label>
+                    <span className="text-[11px] text-stone-500">Upload multiple photos to add to gallery</span>
+                  </div>
 
-                {form.image && (
-                  <img src={form.image} alt="" className="h-24 w-24 rounded-xl object-cover border border-stone-200 shadow-xs" />
+                  {/* Thumbnail Previews */}
+                  {form.images && form.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {form.images.map((imgSrc, idx) => (
+                        <div key={idx} className="relative group h-16 w-16 rounded-xl overflow-hidden border border-stone-300 bg-white shadow-xs">
+                          <img src={imgSrc} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-1 right-1 rounded-full bg-red-600 p-0.5 text-white opacity-90 hover:opacity-100 cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* DYNAMIC COLOR-SPECIFIC IMAGE UPLOAD SECTIONS */}
+                {parsedColors.length > 0 && (
+                  <div className="rounded-xl border border-pink-200 bg-pink-50/50 p-4 space-y-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#ff3e6c]">
+                      Color-Specific Image Galleries
+                    </p>
+                    <p className="text-[11px] text-stone-600">
+                      When users select a specific color shade, these dedicated variant photos will be displayed.
+                    </p>
+
+                    {parsedColors.map((col) => {
+                      const colImages = form.colorImagesList?.[col] || (form.colorImages?.[col] ? [form.colorImages[col]] : []);
+                      return (
+                        <div key={col} className="rounded-xl border border-stone-200 bg-white p-3.5 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-stone-900 uppercase">
+                              Color: <span className="text-[#ff3e6c]">{col}</span>
+                            </span>
+                            <label className="cursor-pointer rounded-lg bg-[#ff3e6c] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white hover:bg-[#e7335e] transition">
+                              + Upload for {col}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => onColorFile(col, e.target.files?.[0])}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder={`Paste image URL for ${col}`}
+                              id={`color_url_${col}`}
+                              className="flex-1 rounded-lg border border-stone-300 px-3 py-1.5 text-xs outline-none focus:border-[#ff3e6c]"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const inputEl = e.currentTarget;
+                                  handleAddColorImageUrl(col, inputEl.value);
+                                  inputEl.value = '';
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const inputEl = document.getElementById(`color_url_${col}`) as HTMLInputElement;
+                                if (inputEl) {
+                                  handleAddColorImageUrl(col, inputEl.value);
+                                  inputEl.value = '';
+                                }
+                              }}
+                              className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-bold text-white uppercase tracking-wider hover:bg-stone-800 cursor-pointer"
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          {colImages.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {colImages.map((cImg, cIdx) => (
+                                <div key={cIdx} className="relative group h-14 w-14 rounded-lg overflow-hidden border border-stone-300 bg-stone-50">
+                                  <img src={cImg} alt={`${col} variant ${cIdx + 1}`} className="h-full w-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveColorImage(col, cIdx)}
+                                    className="absolute top-0.5 right-0.5 rounded-full bg-red-600 p-0.5 text-white hover:opacity-100 cursor-pointer"
+                                    title="Remove color photo"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
 
                 {/* PRICING & DISCOUNT */}
@@ -1048,7 +1251,7 @@ export function AdminPage() {
                   )}
                   <button
                     type="submit"
-                    disabled={busy || !form.image || !sizeValidation.isValid}
+                    disabled={busy || ((!form.images || form.images.length === 0) && !form.image) || !sizeValidation.isValid}
                     className="flex-1 rounded-xl bg-[#ff3e6c] px-4 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#e7335e] disabled:opacity-50 cursor-pointer"
                   >
                     {busy ? "Saving..." : editingId ? "Update piece" : "Publish piece"}

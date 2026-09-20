@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
 const ADMIN_EMAIL = "kandammakids@gmail.com";
@@ -10,7 +10,20 @@ export function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
+
+  // Automatically skip login if already authenticated as admin
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        navigate("/admin", { replace: true });
+      } else {
+        setCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +41,7 @@ export function AdminLoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, trimmedEmail, password);
-      navigate("/admin");
+      navigate("/admin", { replace: true });
     } catch (err: any) {
       console.error("Login attempt failed:", err);
       const code = err?.code || "";
@@ -46,6 +59,14 @@ export function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center text-xs font-semibold uppercase tracking-wider text-stone-500">
+        Verifying admin session...
+      </div>
+    );
   }
 
   return (
