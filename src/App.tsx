@@ -10,6 +10,7 @@ import { ShopPage } from "./pages/ShopPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { TrackOrderPage } from "./pages/TrackOrderPage";
 import { AuthPage } from "./pages/AuthPage";
+import { AboutPage } from "./pages/AboutPage";
 import { AuthProvider } from "./context/AuthContext";
 import { useProductStore } from "./store/productStore";
 import { useThemeStore } from "./store/themeStore";
@@ -20,7 +21,6 @@ export default function App() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const theme = useThemeStore((s) => s.theme);
 
-  // State to control the slide-over wishlist drawer globally from the header
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,6 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* Pass down the wishlist drawer state handler so the header icon opens it */}
         <WishlistDrawer 
           isOpen={wishlistOpen} 
           onClose={() => setWishlistOpen(false)} 
@@ -40,6 +39,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout onOpenWishlist={() => setWishlistOpen(true)} />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/shop/:id" element={<ProductPage />} />
             <Route path="/orders" element={<OrdersPage />} />

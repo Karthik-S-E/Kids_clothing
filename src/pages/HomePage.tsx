@@ -282,10 +282,9 @@ export function HomePage() {
             },
           }}
         >
-          {allProducts.slice(0, 8).map((product, index) => {
+          {allProducts.slice(0, 8).map((product) => {
             const isWishlisted = isInWishlist(product.id);
 
-            // Dynamic discount math using admin's discountPercent
             const discountPercent = Number(product.discountPercent) || 0;
             const hasDiscount = discountPercent > 0 && discountPercent < 100;
             const mrp = hasDiscount
@@ -392,7 +391,7 @@ export function HomePage() {
             Every garment is tailored with itch-free seams and 100% breathable mul-cotton inner linings. Designed so children can move freely, celebrate happily, and rest peacefully.
           </p>
           <Link
-            to="/shop"
+            to="/about"
             className="mt-8 inline-block border-b-2 border-[#1d1d1b] pb-1 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-70 transition"
           >
             Read Our Story &gt;
