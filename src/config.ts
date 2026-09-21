@@ -14,16 +14,39 @@ export const social = {
 export const genders = ["Boy", "Girl"] as const;
 
 export const ageRanges = [
+  // Infants & Toddlers
+  "0-6 Months",
+  "6-12 Months",
+  "12-18 Months",
+  "18-24 Months",
+
+  // Early Childhood
   "0-1 Years",
   "1-2 Years",
   "2-3 Years",
-  "2-5 Years",
   "3-4 Years",
   "4-5 Years",
+  "5-6 Years",
+  "6-7 Years",
+  "7-8 Years",
+  "8-9 Years",
+  "9-10 Years",
+
+  // Older Children & Pre-Teens
+  "10-12 Years",
+  "12-14 Years",
+  "14-16 Years",
+
+  // Popular Combined Range Brackets
+  "1-3 Years",
+  "2-4 Years",
+  "2-5 Years",
+  "3-6 Years",
   "4-8 Years",
-  "5-8 Years",
-  "6-9 Years",
+  "6-10 Years",
   "8-12 Years",
+  "10-15 Years",
+  "Free Size",
 ] as const;
 
 export type Gender = (typeof genders)[number];
@@ -45,7 +68,7 @@ export type Product = {
   image: string;
   images?: string[];
   price: number;
-  discountPercent?: number; // Dynamic Admin Offer (e.g., 20 for 20% OFF, 0 for None)
+  discountPercent?: number;
   gender: Gender;
   ageRange: AgeRange;
   description: string;

@@ -7,12 +7,12 @@ import {
   RotateCcw, 
   Heart, 
   ShoppingBag, 
-  MessageCircle,
+  MessageCircle, 
   Check, 
-  ExternalLink,
-  ChevronRight,
-  ChevronLeft,
-  X
+  ExternalLink, 
+  ChevronRight, 
+  ChevronLeft, 
+  X 
 } from "lucide-react";
 import { formatINR } from "../lib/formatINR";
 import { whatsappOrderUrl } from "../lib/whatsapp";
@@ -21,6 +21,30 @@ import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
+
+function getImagesForColor(prod: any, clr: string): string[] {
+  if (!prod || !clr) return [];
+
+  // 1. colorImagesList
+  const list = prod.colorImagesList?.[clr];
+  if (Array.isArray(list) && list.length > 0) return list.flat().filter(Boolean);
+
+  // 2. colorGalleries / colorGallery
+  const galleries = prod.colorGalleries?.[clr] || prod.colorGallery?.[clr];
+  if (Array.isArray(galleries) && galleries.length > 0) return galleries.flat().filter(Boolean);
+
+  // 3. colorImages (handles both string[] array or single string)
+  const cImgs = prod.colorImages?.[clr];
+  if (Array.isArray(cImgs) && cImgs.length > 0) return cImgs.flat().filter(Boolean);
+  if (typeof cImgs === "string" && cImgs.trim()) return [cImgs.trim()];
+
+  // 4. colorSpecificImages / colorPhotos
+  const specific = prod.colorSpecificImages?.[clr] || prod.colorPhotos?.[clr];
+  if (Array.isArray(specific) && specific.length > 0) return specific.flat().filter(Boolean);
+  if (typeof specific === "string" && specific.trim()) return [specific.trim()];
+
+  return [];
+}
 
 export function ProductPage() {
   const { id } = useParams();
@@ -36,7 +60,8 @@ export function ProductPage() {
     : [];
 
   const [size, setSize] = useState<string>(product?.sizes[0] ?? "");
-  const [selectedColor, setSelectedColor] = useState<string>("");
+  // Default to first color if present
+  const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] ?? "");
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [pincode, setPincode] = useState("");
@@ -49,6 +74,11 @@ export function ProductPage() {
 
   const colorGroupId = useId();
   const sizeGroupId = useId();
+
+  // Reset to the product's primary color when navigating between different products
+  useEffect(() => {
+    setSelectedColor(availableColors[0] ?? "");
+  }, [product?.id]);
 
   const checkScrollPosition = () => {
     if (scrollContainerRef.current) {
@@ -92,15 +122,10 @@ export function ProductPage() {
   const inStock = product.stockStatus ?? true;
   const quantity = product.stockQuantity ?? 5;
 
+  // Retrieve all images for the selected color; fallback to default gallery if deselected
   let displayImages: string[] = [];
   if (selectedColor) {
-    const colorList = product.colorImagesList?.[selectedColor];
-    if (colorList && colorList.length > 0) {
-      displayImages = colorList;
-    } else {
-      const singleColorImg = product.colorImages?.[selectedColor];
-      displayImages = singleColorImg ? [singleColorImg] : [];
-    }
+    displayImages = getImagesForColor(product, selectedColor);
   }
   
   if (displayImages.length === 0) {
@@ -224,13 +249,13 @@ export function ProductPage() {
         </ol>
       </nav>
 
-      {/* Main Two-Panel Responsive Layout */}
+      {/* Main Two-Panel Layout */}
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-start">
         
-        {/* Left Panel: Fully Responsive Vertical Image Stack (No clipping, natural height) */}
+        {/* Left Panel: Vertical Stack showing all images for current color/state */}
         <section aria-label="Product Media Showcase" className="lg:col-span-6 flex flex-col gap-4 w-full">
           {displayImages.map((imgUrl, idx) => (
-            <div key={idx} className="w-full overflow-hidden rounded-xl bg-white border border-stone-200 shadow-xs">
+            <div key={idx} className="w-full overflow-hidden rounded-xl bg-white border border-stone-200 shadow-xs relative">
               <img
                 src={imgUrl}
                 alt={`${product.name} - View ${idx + 1}`}
@@ -247,9 +272,8 @@ export function ProductPage() {
           ))}
         </section>
 
-        {/* Right Panel: Sticky Product Purchasing Options */}
+        {/* Right Panel: Product Purchasing Options */}
         <section aria-label="Product Purchasing Options" className="lg:col-span-6 flex flex-col gap-6 bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm lg:sticky lg:top-24">
-          {/* Header & Quality Tag */}
           <div className="border-b border-stone-200 pb-4">
             <h1 className="text-2xl font-black tracking-tight text-stone-900">Kandamma Kids</h1>
             <p className="text-lg font-medium text-stone-700 mt-1">{product.name}</p>
@@ -275,11 +299,11 @@ export function ProductPage() {
             <span className="text-xs font-bold text-[#03a685] tracking-wide uppercase">inclusive of all taxes</span>
           </div>
 
-          {/* Flipkart-Style Horizontal Scrollable Color Selector with Dynamic Arrows */}
+          {/* Color Selector: Click to select, click again to deselect */}
           {availableColors.length > 0 && (
             <div className="flex flex-col gap-2.5">
               <span id={colorGroupId} className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                More Colors: <span className="font-semibold text-[#ff3e6c] normal-case capitalize">{selectedColor || "None Selected"}</span>
+                More Colors: <span className="font-semibold text-[#ff3e6c] normal-case capitalize">{selectedColor || "All Images"}</span>
               </span>
 
               <div className="relative group">
@@ -301,7 +325,8 @@ export function ProductPage() {
                   className="flex items-center gap-3 overflow-x-auto px-2 py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
                 >
                   {availableColors.map((clr) => {
-                    const thumb = product.colorImages?.[clr] || product.image;
+                    const colorImgs = getImagesForColor(product, clr);
+                    const thumb = colorImgs[0] || (typeof product.colorImages?.[clr] === "string" ? product.colorImages[clr] : product.image);
                     const isSelected = selectedColor === clr;
 
                     return (
@@ -512,7 +537,7 @@ export function ProductPage() {
             </div>
           </div>
 
-          {/* Specifications */}
+          {/* Product Specifications */}
           <div className="border-t border-stone-200 pt-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-2">Product Details</h2>
             <p className="text-xs leading-relaxed text-stone-700 mb-4 font-normal">{product.description}</p>

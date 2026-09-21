@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check admin privileges
+    // Helper: Check admin privileges
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.email == "kandammakids@gmail.com" ||
@@ -13,19 +13,45 @@ service cloud.firestore {
       );
     }
 
-    // Products — public read, admin-only write
+    // 1. Users collection: Customers can read/update their own profile; Admins can manage and delete all
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // 2. Orders collection: Customers create/read; Admins can update status or delete
+    match /orders/{orderId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
+    // 3. Phone lookup index
+    match /phone_lookup/{phone} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 4. Products — public read, admin-only write & delete
     match /products/{docId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
-    // Settings (brand info) — public read, admin-only write
+    // 5. Settings (brand logo & info) — public read, admin-only write
     match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Default deny for everything else
+    // 6. Customers collection (backup store)
+    match /customers/{customerId} {
+      allow read, write: if request.auth != null && (request.auth.uid == customerId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Default deny for unlisted paths
     match /{document=**} {
       allow read, write: if false;
     }

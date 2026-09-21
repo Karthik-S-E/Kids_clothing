@@ -8,7 +8,7 @@ import { useBrandStore } from "../store/brandStore";
 import { useAuth } from "../context/AuthContext";
 import { AuthModal } from "./AuthModal";
 import { ProfileModal } from "./ProfileModal";
-import { WishlistDrawer } from "./WishlistDrawer"; // Import directly so Header can control it as a fallback
+import { WishlistDrawer } from "./WishlistDrawer";
 import { social } from "../config";
 import { useScrollState } from "../hooks/useScrollState";
 
@@ -53,8 +53,8 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const location = useLocation();
-  const { user, profile, logout } = useAuth();
-  const isScrolled = useScrollState(50); // Condense header when scroll past 50px
+  const { user, profile, isAdmin, logout } = useAuth();
+  const isScrolled = useScrollState(50);
 
   const cartItems = useCartStore((s) => s.items);
   const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -76,7 +76,6 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
     setUserDropdownOpen(false);
   }, [location.pathname]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -92,9 +91,29 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
   const rawDisplayName = profile?.displayName || user?.displayName;
   const displayName = rawDisplayName && rawDisplayName.trim()
     ? rawDisplayName.trim()
-    : user?.email
-    ? user.email.split("@")[0]
     : "Customer";
+
+  const getDisplaySubtitle = () => {
+    if (user?.email && !user.email.endsWith("@kandamma.local")) {
+      return user.email;
+    }
+    if (profile?.email && !profile.email.endsWith("@kandamma.local")) {
+      return profile.email;
+    }
+    const providerEmail = user?.providerData?.find(
+      (p) => p.email && !p.email.endsWith("@kandamma.local")
+    )?.email;
+    if (providerEmail) {
+      return providerEmail;
+    }
+    if (profile?.phone) {
+      return `+91 ${profile.phone}`;
+    }
+    if (user?.email?.endsWith("@kandamma.local")) {
+      return `+91 ${user.email.split("@")[0]}`;
+    }
+    return "";
+  };
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -117,7 +136,6 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             isScrolled ? 'scale-[0.95]' : 'scale-100'
           }`}
         >
-          
           {/* Left Side: Hamburger (Mobile) + Brand Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -188,8 +206,9 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             </Link>
           </nav>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-1 text-[#281E15]">
+          {/* Right Actions: Instagram -> Wishlist -> Shopping Bag -> Profile */}
+          <div className="flex items-center gap-1 sm:gap-1.5 text-[#281E15]">
+            {/* 1. Instagram Link */}
             <a
               href={social.instagram}
               target="_blank"
@@ -200,7 +219,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
               <InstagramIcon className="h-5 w-5" />
             </a>
 
-            {/* Wishlist Button Opening Drawer */}
+            {/* 2. Wishlist Button */}
             <button
               type="button"
               onClick={handleWishlistClick}
@@ -216,7 +235,27 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
               )}
             </button>
 
-            {/* User Profile / Authentication Menu */}
+            {/* 3. Shopping Bag Button */}
+            <button
+              type="button"
+              onClick={onOpenCart}
+              className="relative cursor-pointer hover:opacity-70 transition-opacity p-1.5 mr-1"
+              aria-label="Open cart"
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {totalCount > 0 && (
+                <motion.span 
+                  className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white"
+                  animate={badgeAnimate ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ transform: 'translateZ(0)' }}
+                >
+                  {totalCount}
+                </motion.span>
+              )}
+            </button>
+
+            {/* 4. User Profile / Account Dropdown (Moved to the End) */}
             <div className="relative" ref={dropdownRef}>
               {user ? (
                 <button
@@ -239,14 +278,15 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 </button>
               )}
 
-              {/* Account Dropdown */}
               {userDropdownOpen && user && (
                 <div className="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white p-2 shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                   <div className="border-b border-stone-100 px-3 py-2">
                     <p className="text-xs font-bold text-stone-900 truncate capitalize">
                       {displayName}
                     </p>
-                    <p className="text-[11px] text-stone-500 truncate">{user.email}</p>
+                    <p className="text-[11px] text-stone-500 truncate font-mono">
+                      {getDisplaySubtitle()}
+                    </p>
                   </div>
 
                   <div className="py-1">
@@ -280,14 +320,16 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                       <span>Track Any Parcel</span>
                     </Link>
 
-                    <Link
-                      to="/admin/login"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-stone-500" />
-                      <span>Store Admin</span>
-                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-amber-800 bg-amber-50/60 hover:bg-amber-100/70"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-amber-600" />
+                        <span>Store Admin</span>
+                      </Link>
+                    )}
                   </div>
 
                   <div className="border-t border-stone-100 pt-1">
@@ -306,30 +348,10 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 </div>
               )}
             </div>
-
-            {/* Shopping Bag Button with Live Badge */}
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="relative cursor-pointer hover:opacity-70 transition-opacity p-1.5"
-              aria-label="Open cart"
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {totalCount > 0 && (
-                <motion.span 
-                  className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white"
-                  animate={badgeAnimate ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ transform: 'translateZ(0)' }}
-                >
-                  {totalCount}
-                </motion.span>
-              )}
-            </button>
           </div>
         </div>
 
-        {/* Mobile Menu Drawer */}
+        {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col space-y-4">
@@ -384,7 +406,6 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 CONTACT
               </Link>
 
-              {/* Mobile Account Section */}
               {user ? (
                 <>
                   <button
@@ -405,6 +426,15 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                     <Package className="h-4 w-4" />
                     <span>MY ORDERS</span>
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 text-amber-800"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-amber-600" />
+                      <span>STORE ADMIN</span>
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={async () => {
@@ -435,13 +465,9 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
         )}
       </header>
 
-      {/* Customer Login & Sign Up Modal */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-
-      {/* Profile & Address Editor Modal */}
       <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
 
-      {/* Fallback Wishlist Drawer rendered directly inside Header if parent didn't provide prop */}
       {!onOpenWishlist && (
         <WishlistDrawer 
           isOpen={internalWishlistOpen} 

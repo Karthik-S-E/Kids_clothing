@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect, FormEvent } from "react";
+import { X, User, Phone, MapPin, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface ProfileModalProps {
@@ -7,88 +7,102 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
-// Helper to extract a clean string regardless of how it was nested or keyed
-function extractField(source: any, keys: string[]): string {
-  if (!source || typeof source !== "object") return "";
-
-  // 1. Direct key match on top-level
-  for (const key of keys) {
-    const val = source[key];
-    if (typeof val === "string" && val.trim()) return val.trim();
-    if (typeof val === "number") return String(val);
-  }
-
-  // 2. Check if nested inside an 'address' or 'delivery' sub-object
-  const nested = source.address || source.delivery;
-  if (nested && typeof nested === "object") {
-    for (const key of keys) {
-      const val = nested[key];
-      if (typeof val === "string" && val.trim()) return val.trim();
-      if (typeof val === "number") return String(val);
-    }
-  }
-
-  return "";
-}
-
-// Helper specifically for Street Address
-function extractAddressString(source: any): string {
-  if (!source) return "";
-  const rawAddr = source.address;
-  if (typeof rawAddr === "string") return rawAddr.trim();
-  if (typeof rawAddr === "object" && rawAddr !== null) {
-    return rawAddr.street || rawAddr.line1 || rawAddr.address || "";
-  }
-  return "";
-}
-
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { user, profile, updateUserProfile } = useAuth();
 
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
 
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeMessage, setPincodeMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (profile || user) {
-      setName(extractField(profile, ["displayName", "name"]) || user?.displayName || "");
-      setPhone(extractField(profile, ["phone", "phoneNumber", "mobile"]));
-      setAddress(extractAddressString(profile));
-      setCity(extractField(profile, ["city", "town", "district"]));
-      setPincode(extractField(profile, ["pincode", "pin", "postalCode", "zip"]));
+    if (isOpen) {
+      setError("");
+      setPincodeMessage("");
+      setFullName(profile?.displayName || user?.displayName || "");
+      setPhone(profile?.phone || "");
+      setStreetAddress(profile?.address || "");
+      setCity(profile?.city || "");
+      setState(profile?.state || "");
+      setPincode(profile?.pincode || "");
     }
-  }, [profile, user, isOpen]);
+  }, [isOpen, profile, user]);
 
-  if (!isOpen) return null;
+  const handlePincodeChange = async (val: string) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 6);
+    setPincode(cleaned);
+    setPincodeMessage("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    if (cleaned.length === 6) {
+      setPincodeLoading(true);
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        const data = await res.json();
+        if (data[0]?.Status === "Success" && data[0]?.PostOffice?.length > 0) {
+          const offices = data[0].PostOffice;
+          const po = offices.find((item: any) => item.DeliveryStatus === "Delivery") || offices[0];
+
+          const talukOrTown = po.Block && po.Block !== "NA" ? po.Block : po.Name || "";
+          const detectedDistrict = po.District || "";
+          const detectedState = po.State || "";
+
+          const formattedCity =
+            talukOrTown && detectedDistrict && talukOrTown !== detectedDistrict
+              ? `${talukOrTown}, ${detectedDistrict}`
+              : detectedDistrict || talukOrTown;
+
+          setCity(formattedCity);
+          setState(detectedState);
+          setPincodeMessage(`${formattedCity}, ${detectedState}`);
+        } else {
+          setPincodeMessage("Pincode not found. Please enter City & State manually.");
+        }
+      } catch {
+        setPincodeMessage("Could not auto-fetch location. Please enter manually.");
+      } finally {
+        setPincodeLoading(false);
+      }
+    }
+  };
+
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
+    setError("");
+
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone && cleanPhone.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (pincode && pincode.length !== 6) {
+      setError("Please enter a valid 6-digit pincode.");
+      return;
+    }
+
     setSaving(true);
-
     try {
-      if (!name.trim()) throw new Error("Full name cannot be empty.");
-
       await updateUserProfile({
-        displayName: name.trim(),
-        phone: phone.trim(),
-        address: address.trim(),
+        displayName: fullName.trim(),
+        phone: cleanPhone,
+        address: streetAddress.trim(),
         city: city.trim(),
+        state: state.trim(),
         pincode: pincode.trim(),
       });
-
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 1200);
+      onClose();
     } catch (err: any) {
       setError(err.message || "Failed to update profile.");
     } finally {
@@ -96,133 +110,170 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   };
 
+  if (!isOpen) return null;
+
+  const resolvedRealEmail =
+    user?.email && !user.email.endsWith("@kandamma.local")
+      ? user.email
+      : profile?.email && !profile.email.endsWith("@kandamma.local")
+      ? profile.email
+      : user?.providerData?.find((p) => p.email && !p.email.endsWith("@kandamma.local"))?.email ||
+        null;
+
+  const displayEmail =
+    resolvedRealEmail ||
+    (profile?.phone ? `+91 ${profile.phone}` : "Customer");
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-2xl text-stone-900 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 sm:p-7 shadow-2xl border border-stone-200 max-h-[92vh] overflow-y-auto">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-800 transition cursor-pointer"
+          className="absolute right-4 top-4 p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+          aria-label="Close"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <h2 className="font-serif text-2xl font-normal text-[#1d1d1b]">Account Settings</h2>
-        <p className="mt-1 text-xs text-stone-500">
-          Update your personal details and delivery address
-        </p>
+        <div className="mb-5">
+          <h2 className="font-serif text-2xl font-bold text-stone-900">
+            Delivery & Account Settings
+          </h2>
+          <p className="text-xs text-stone-500 mt-1">
+            Save your delivery address for hassle-free order dispatch.
+          </p>
+        </div>
 
         {error && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4 rounded-lg bg-red-50 p-2.5 text-xs font-medium text-red-600 border border-red-200">
+            {error}
           </div>
         )}
 
-        {success && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>Profile details updated successfully!</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-left">
+        <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
               Email Address (Login ID)
             </label>
             <input
               type="text"
               disabled
-              value={user?.email || ""}
-              className="mt-1 w-full rounded-lg border border-stone-200 bg-stone-100 px-3.5 py-2.5 text-xs text-stone-500 cursor-not-allowed"
+              value={displayEmail}
+              className="w-full rounded-xl border border-stone-200 bg-stone-100 px-3.5 py-2.5 text-sm text-stone-600 cursor-not-allowed select-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
                 Full Name *
               </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Priya Sharma"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-xs outline-none focus:border-[#ff3e6c]"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  placeholder="Your Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 pl-9 focus:border-stone-900 focus:outline-none"
+                />
+                <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+              </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
                 Phone Number
               </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 98765 43210"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-xs outline-none focus:border-[#ff3e6c]"
-              />
+              <div className="relative">
+                <input
+                  type="tel"
+                  maxLength={10}
+                  placeholder="10-digit mobile"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 pl-9 focus:border-stone-900 focus:outline-none"
+                />
+                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+              </div>
             </div>
           </div>
 
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
               Delivery Street Address
             </label>
-            <textarea
-              rows={2}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="House/Flat No, Street, Landmark"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3.5 py-2 text-xs outline-none focus:border-[#ff3e6c]"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="House/Flat No., Building Name, Street, Landmark"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 pl-9 focus:border-stone-900 focus:outline-none"
+              />
+              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
                 City / Town
               </label>
               <input
                 type="text"
+                placeholder="e.g. Tarikere, Chikkamagaluru"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Bengaluru"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-xs outline-none focus:border-[#ff3e6c]"
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
-                Pincode
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600">
+                  Pin Code
+                </label>
+                {pincodeLoading && (
+                  <span className="text-[10px] text-stone-500 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Verifying...
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
+                maxLength={6}
+                placeholder="6-digit Pincode"
                 value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                placeholder="560001"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-xs outline-none focus:border-[#ff3e6c]"
+                onChange={(e) => handlePincodeChange(e.target.value)}
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 focus:border-[#ff3e6c] focus:ring-1 focus:ring-[#ff3e6c] focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {pincodeMessage && (
+            <p className="text-xs font-medium text-emerald-700 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              <span>Location: {pincodeMessage}</span>
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer"
+              className="rounded-xl border border-stone-200 px-5 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-lg bg-[#ff3e6c] py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#e7335e] disabled:opacity-50 cursor-pointer"
+              className="rounded-xl bg-[#ff3e6c] hover:bg-[#e6335f] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-70"
             >
-              {saving ? "Saving..." : "Save Details"}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Delivery Address"}
             </button>
           </div>
         </form>

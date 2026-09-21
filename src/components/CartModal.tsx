@@ -1,19 +1,46 @@
-import { X } from "lucide-react";
+import { useState } from "react";
+import { X, AlertCircle, MailCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "../store/cartStore";
 import { formatINR } from "../lib/formatINR";
 import { whatsappCartUrl } from "../lib/whatsapp";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { sendEmailVerification } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 
 export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [resentSuccess, setResentSuccess] = useState(false);
+
+  const currentUser = auth.currentUser;
+
+  const handleResendVerification = async () => {
+    if (!currentUser) return;
+    try {
+      await sendEmailVerification(currentUser);
+      setResentSuccess(true);
+      setVerificationError(null);
+      setTimeout(() => setResentSuccess(false), 4000);
+    } catch {
+      setVerificationError("Please wait a moment before requesting another verification email.");
+    }
+  };
 
   const handleCheckout = async () => {
+    setVerificationError(null);
     const user = auth.currentUser;
 
     if (!user) {
       alert("Please sign in first so your order can be saved to your account!");
+      return;
+    }
+
+    // Refresh token state to verify real-time status
+    await user.reload();
+
+    if (!user.emailVerified) {
+      setVerificationError("Please verify your email before checking out. Click 'Resend Email' if needed.");
       return;
     }
 
@@ -150,13 +177,50 @@ export function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
               {items.length > 0 && (
                 <div className="border-t border-[var(--border)] p-6 space-y-4">
+                  {/* Email verification reminder if user is signed in but unverified */}
+                  {currentUser && !currentUser.emailVerified && (
+                    <div className="rounded-xl border border-amber-300/80 bg-amber-50 p-3 text-xs text-amber-900">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold">Email Verification Required</p>
+                          <p className="mt-0.5 text-amber-800">
+                            Please verify <span className="font-medium underline">{currentUser.email}</span> to proceed with checkout.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            className="mt-2 inline-flex items-center gap-1 font-bold text-amber-950 underline hover:text-black cursor-pointer"
+                          >
+                            Resend Verification Link
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {verificationError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{verificationError}</span>
+                    </div>
+                  )}
+
+                  {resentSuccess && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 flex items-center gap-2">
+                      <MailCheck className="h-4 w-4 shrink-0" />
+                      <span>Verification email sent! Check your inbox.</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-lg">
                     <span className="font-medium">Total</span>
                     <span className="font-semibold text-[var(--accent-primary)]">{formatINR(getTotalPrice())}</span>
                   </div>
+
                   <button
                     onClick={handleCheckout}
-                    className="w-full rounded-full bg-[#25D366] py-3 text-sm font-semibold uppercase tracking-widest text-white whatsapp-glow cursor-pointer"
+                    className="w-full rounded-full bg-[#25D366] py-3 text-sm font-semibold uppercase tracking-widest text-white whatsapp-glow cursor-pointer transition active:scale-[0.99]"
                   >
                     Checkout via WhatsApp
                   </button>
