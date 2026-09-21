@@ -55,9 +55,10 @@ export function Layout({ onOpenWishlist }: LayoutProps) {
       <WishlistDrawer 
         isOpen={wishlistOpen} 
         onClose={() => setWishlistOpen(false)} 
-        onOpenCart={() => setCartOpen(true)} 
       />
       <AiStylistModal isOpen={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }
+
+export default Layout;
