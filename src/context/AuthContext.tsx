@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
 import {
   User,
   onAuthStateChanged,
@@ -24,6 +24,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 
 export const ADMIN_EMAIL = "kandammakids@gmail.com";
 
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const isRestoringRef = useRef(false);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
@@ -133,14 +136,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 1. Restore Cart & Wishlist from Firestore on login, clear on logout
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
       if (currentUser) {
         const userRef = doc(db, "users", currentUser.uid);
+
+        // Fetch user data including saved cart and wishlist
+        try {
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            isRestoringRef.current = true;
+
+            if (Array.isArray(data.cart) && data.cart.length > 0) {
+              useCartStore.setState({ items: data.cart });
+            }
+            if (Array.isArray(data.wishlist) && data.wishlist.length > 0) {
+              useWishlistStore.setState({ items: data.wishlist });
+            }
+
+            setTimeout(() => {
+              isRestoringRef.current = false;
+            }, 300);
+          }
+        } catch (err) {
+          console.error("Failed to restore cart/wishlist from Firestore:", err);
+          isRestoringRef.current = false;
+        }
+
         unsubscribeProfile = onSnapshot(userRef, (snap) => {
           if (snap.exists()) {
             const data = snap.data();
@@ -172,6 +200,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         if (unsubscribeProfile) unsubscribeProfile();
         setProfile(null);
+
+        // Clear active screen view on logout so guests do not see the prior user's items
+        useCartStore.setState({ items: [] });
+        useWishlistStore.setState({ items: [] });
       }
       setLoading(false);
     });
@@ -179,6 +211,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
+    };
+  }, []);
+
+  // 2. Automatically save cart & wishlist changes to Firestore when logged in
+  useEffect(() => {
+    const unsubCart = useCartStore.subscribe((state) => {
+      if (isRestoringRef.current || !auth.currentUser) return;
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      setDoc(userRef, { cart: state.items }, { merge: true }).catch(() => {});
+    });
+
+    const unsubWishlist = useWishlistStore.subscribe((state) => {
+      if (isRestoringRef.current || !auth.currentUser) return;
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      setDoc(userRef, { wishlist: state.items }, { merge: true }).catch(() => {});
+    });
+
+    return () => {
+      unsubCart();
+      unsubWishlist();
     };
   }, []);
 
@@ -323,8 +375,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendPasswordResetEmail(auth, cleanEmail);
   };
 
-  const logout = async () => {
-    await signOut(auth);
+const logout = async () => {
+    try {
+      if (auth.currentUser) {
+        // 1. Save current items to Firestore before session terminates
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(
+          userRef,
+          {
+            cart: useCartStore.getState().items,
+            wishlist: useWishlistStore.getState().items,
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
+
+      // 2. Terminate Firebase session
+      await signOut(auth);
+
+      // 3. Clear in-memory cart & wishlist state
+      useCartStore.setState({ items: [] });
+      useWishlistStore.setState({ items: [] });
+    } catch (err) {
+      console.error("Error during sign out:", err);
+    } finally {
+      // 4. Force redirect to home page at any cost
+      window.location.replace("/");
+    }
   };
 
   return (
