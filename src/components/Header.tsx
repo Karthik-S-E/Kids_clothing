@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { AuthModal } from "./AuthModal";
 import { ProfileModal } from "./ProfileModal";
 import { WishlistDrawer } from "./WishlistDrawer";
+import { NavbarSearch } from "./NavbarSearch";
 import { social } from "../config";
 import { useScrollState } from "../hooks/useScrollState";
 
@@ -127,17 +128,14 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
   return (
     <>
       <header 
-        className={`fixed top-0 left-0 right-0 z-50 bg-[#F8F4EF]/95 backdrop-blur-md border-b border-[#E8E2D9] transition-all duration-300 ${
-          isScrolled ? 'h-[56px]' : 'h-[64px]'
+        className={`fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E2D9] transition-all duration-300 shadow-xs ${
+          isScrolled ? 'h-[58px]' : 'h-[72px]'
         }`}
       >
-        <div 
-          className={`mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-full transition-transform duration-300 ${
-            isScrolled ? 'scale-[0.95]' : 'scale-100'
-          }`}
-        >
-          {/* Left Side: Hamburger (Mobile) + Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-full">
+          
+          {/* Left Side: Mobile Menu + Brand Logo */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -152,116 +150,114 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 <img
                   src={settings.logoUrl}
                   alt={settings.name}
-                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover ring-1 ring-[#D8CEBE] shadow-sm flex-shrink-0 transition-transform duration-300"
+                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover ring-2 ring-[#D9B382]/50 shadow-sm flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0 transition-transform duration-300">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0 shadow-sm">
                   KK
                 </div>
               )}
-              <div className="flex flex-col text-left justify-center">
-                <span className="font-serif text-lg sm:text-xl tracking-tight text-[#281E15] leading-none transition-transform duration-300">
+              <div className="hidden sm:flex flex-col text-left justify-center">
+                <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#281E15] leading-none">
                   {settings.name || "Kandamma Kids"}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-medium text-[#786E64] tracking-normal mt-0.5 leading-none transition-transform duration-300">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-[#C27A6A] tracking-wider mt-1 leading-none">
                   ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Center Nav Links */}
+          {/* Center Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               to="/shop"
-              className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
-                isActive("/shop") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+                isActive("/shop") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
-              SHOP
+              Shop
             </Link>
             <Link
               to="/about"
-              className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
-                isActive("/about") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+                isActive("/about") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
-              ABOUT
+              About
             </Link>
             <Link
               to="/contact"
-              className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
-                isActive("/contact") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+                isActive("/contact") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
-              CONTACT
+              Contact
             </Link>
             <Link
               to="/track"
-              className={`text-xs font-semibold tracking-widest uppercase transition-colors hover:text-[#281E15] ${
-                isActive("/track") ? "text-[#281E15] font-bold" : "text-[#5a5248]"
+              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+                isActive("/track") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
-              TRACK PARCEL
+              Track Parcel
             </Link>
           </nav>
 
-          {/* Right Actions: Instagram -> Wishlist -> Shopping Bag -> Profile */}
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[#281E15]">
-            {/* 1. Instagram Link */}
+          {/* Right Actions: Search -> Instagram -> Wishlist -> Bag -> Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 text-[#281E15]">
+            <NavbarSearch />
+
             <a
               href={social.instagram}
               target="_blank"
               rel="noreferrer"
-              className="hover:opacity-70 transition-opacity p-1.5"
+              className="hover:text-[#C27A6A] transition-colors p-1.5 hidden lg:block"
               aria-label="Instagram"
             >
-              <InstagramIcon className="h-5 w-5" />
+              <InstagramIcon className="h-4 w-4" />
             </a>
 
-            {/* 2. Wishlist Button */}
             <button
               type="button"
               onClick={handleWishlistClick}
-              className="relative hover:opacity-70 transition-opacity cursor-pointer p-1.5"
+              className="relative hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5"
               aria-label="Wishlist"
               title="Wishlist"
             >
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3e6c] text-[9px] font-bold text-white">
+                <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3e6c] text-[9px] font-bold text-white shadow-xs">
                   {wishlistCount}
                 </span>
               )}
             </button>
 
-            {/* 3. Shopping Bag Button */}
             <button
               type="button"
               onClick={onOpenCart}
-              className="relative cursor-pointer hover:opacity-70 transition-opacity p-1.5 mr-1"
+              className="relative cursor-pointer hover:text-[#C27A6A] transition-colors p-1.5"
               aria-label="Open cart"
             >
               <ShoppingBag className="h-5 w-5" />
               {totalCount > 0 && (
                 <motion.span 
-                  className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white"
+                  className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white shadow-xs"
                   animate={badgeAnimate ? { scale: [1, 1.3, 1] } : { scale: 1 }}
                   transition={{ duration: 0.2 }}
-                  style={{ transform: 'translateZ(0)' }}
                 >
                   {totalCount}
                 </motion.span>
               )}
             </button>
 
-            {/* 4. User Profile / Account Dropdown (Moved to the End) */}
+            {/* User Profile / Account Dropdown */}
             <div className="relative" ref={dropdownRef}>
               {user ? (
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ff3e6c] text-xs font-bold text-white hover:bg-[#e7335e] transition cursor-pointer uppercase tracking-tight"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C27A6A] text-xs font-bold text-white hover:bg-[#b0695a] transition cursor-pointer uppercase tracking-tight shadow-xs"
                   title="My Account"
                 >
                   {getUserInitials(displayName)}
@@ -270,7 +266,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
-                  className="hover:opacity-70 transition-opacity cursor-pointer p-1.5"
+                  className="hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5"
                   aria-label="Sign In or Register"
                   title="Sign In"
                 >
@@ -279,8 +275,8 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
               )}
 
               {userDropdownOpen && user && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white p-2 shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                  <div className="border-b border-stone-100 px-3 py-2">
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#E8E2D9] bg-white p-2 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="border-b border-stone-100 px-3 py-2.5">
                     <p className="text-xs font-bold text-stone-900 truncate capitalize">
                       {displayName}
                     </p>
@@ -289,34 +285,34 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                     </p>
                   </div>
 
-                  <div className="py-1">
+                  <div className="py-1 space-y-0.5">
                     <button
                       type="button"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         setProfileModalOpen(true);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 text-left cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-stone-700 hover:bg-[#FAF7F2] text-left cursor-pointer transition"
                     >
-                      <UserCheck className="h-4 w-4 text-stone-500" />
+                      <UserCheck className="h-4 w-4 text-[#C27A6A]" />
                       <span>My Profile & Address</span>
                     </button>
 
                     <Link
                       to="/orders"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50"
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-stone-700 hover:bg-[#FAF7F2] transition"
                     >
-                      <Package className="h-4 w-4 text-stone-500" />
+                      <Package className="h-4 w-4 text-[#C27A6A]" />
                       <span>My Orders</span>
                     </Link>
 
                     <Link
                       to="/track"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50"
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-stone-700 hover:bg-[#FAF7F2] transition"
                     >
-                      <Truck className="h-4 w-4 text-stone-500" />
+                      <Truck className="h-4 w-4 text-[#C27A6A]" />
                       <span>Track Any Parcel</span>
                     </Link>
 
@@ -324,22 +320,22 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                       <Link
                         to="/admin"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-amber-800 bg-amber-50/60 hover:bg-amber-100/70"
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 transition"
                       >
-                        <ShieldCheck className="h-4 w-4 text-amber-600" />
-                        <span>Store Admin</span>
+                        <ShieldCheck className="h-4 w-4 text-amber-700" />
+                        <span>Store Admin Hub</span>
                       </Link>
                     )}
                   </div>
 
-                  <div className="border-t border-stone-100 pt-1">
+                  <div className="border-t border-stone-100 pt-1 mt-1">
                     <button
                       type="button"
                       onClick={async () => {
                         setUserDropdownOpen(false);
                         await logout();
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer transition"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Sign Out</span>
@@ -353,59 +349,13 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col space-y-4">
-              <Link
-                to="/shop"
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 ${
-                  isActive("/shop") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
-                }`}
-              >
-                SHOP
-              </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  setMobileMenuOpen(false);
-                  handleWishlistClick(e);
-                }}
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center justify-between text-left cursor-pointer w-full ${
-                  isActive("/wishlist") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
-                }`}
-              >
-                <span>WISHLIST</span>
-                {wishlistCount > 0 && (
-                  <span className="rounded-full bg-[#ff3e6c] px-2 py-0.5 text-xs font-bold text-white">
-                    {wishlistCount}
-                  </span>
-                )}
-              </button>
-              <Link
-                to="/track"
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 ${
-                  isActive("/track") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
-                }`}
-              >
-                <Truck className="h-4 w-4" />
-                <span>TRACK PARCEL</span>
-              </Link>
-              <Link
-                to="/about"
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 ${
-                  isActive("/about") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
-                }`}
-              >
-                ABOUT
-              </Link>
-              <Link
-                to="/contact"
-                className={`text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 ${
-                  isActive("/contact") ? "text-[#281E15] font-bold" : "text-[#6E6259]"
-                }`}
-              >
-                CONTACT
-              </Link>
-
+          <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-6 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col space-y-4 text-xs font-bold tracking-[0.15em] uppercase text-[#281E15]">
+              <Link to="/shop" className="py-2 border-b border-[#E8E2D9]/60">Shop Collection</Link>
+              <Link to="/about" className="py-2 border-b border-[#E8E2D9]/60">Our Heritage & Story</Link>
+              <Link to="/contact" className="py-2 border-b border-[#E8E2D9]/60">Customer Care</Link>
+              <Link to="/track" className="py-2 border-b border-[#E8E2D9]/60">Track Parcel</Link>
+              
               {user ? (
                 <>
                   <button
@@ -414,25 +364,16 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                       setMobileMenuOpen(false);
                       setProfileModalOpen(true);
                     }}
-                    className="text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 text-[#281E15] text-left cursor-pointer"
+                    className="py-2 border-b border-[#E8E2D9]/60 text-left flex items-center gap-2"
                   >
-                    <UserCheck className="h-4 w-4" />
-                    <span>MY PROFILE & ADDRESS</span>
+                    <UserCheck className="h-4 w-4 text-[#C27A6A]" /> My Profile & Address
                   </button>
-                  <Link
-                    to="/orders"
-                    className="text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 text-[#281E15]"
-                  >
-                    <Package className="h-4 w-4" />
-                    <span>MY ORDERS</span>
+                  <Link to="/orders" className="py-2 border-b border-[#E8E2D9]/60 flex items-center gap-2">
+                    <Package className="h-4 w-4 text-[#C27A6A]" /> My Orders
                   </Link>
                   {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="text-sm font-semibold tracking-widest uppercase py-1 border-b border-[#E8E2D9]/40 flex items-center gap-2 text-amber-800"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-amber-600" />
-                      <span>STORE ADMIN</span>
+                    <Link to="/admin" className="py-2 border-b border-[#E8E2D9]/60 flex items-center gap-2 text-amber-800">
+                      <ShieldCheck className="h-4 w-4 text-amber-700" /> Store Admin Hub
                     </Link>
                   )}
                   <button
@@ -441,10 +382,9 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                       setMobileMenuOpen(false);
                       await logout();
                     }}
-                    className="text-sm font-semibold tracking-widest uppercase py-1 text-left text-red-600 flex items-center gap-2 cursor-pointer"
+                    className="py-2 text-left text-red-600 flex items-center gap-2"
                   >
-                    <LogOut className="h-4 w-4" />
-                    <span>SIGN OUT ({displayName})</span>
+                    <LogOut className="h-4 w-4" /> Sign Out
                   </button>
                 </>
               ) : (
@@ -454,10 +394,9 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                     setMobileMenuOpen(false);
                     setAuthModalOpen(true);
                   }}
-                  className="text-sm font-semibold tracking-widest uppercase py-1 text-left text-[#ff3e6c] flex items-center gap-2 cursor-pointer"
+                  className="py-2 text-left text-[#C27A6A] flex items-center gap-2 font-bold"
                 >
-                  <User className="h-4 w-4" />
-                  <span>SIGN IN / REGISTER</span>
+                  <User className="h-4 w-4" /> Sign In / Register
                 </button>
               )}
             </nav>
