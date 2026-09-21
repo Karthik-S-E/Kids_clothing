@@ -281,13 +281,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setGlobalError("");
     setLoading(true);
     try {
-      const googleUser = await signInWithGoogle();
-      if (profile?.phone && profile?.address) {
-        onClose();
-      } else {
-        setFullName(googleUser.displayName || "");
-        setMode("complete_google");
-      }
+      await signInWithGoogle();
+      onClose(); // Automatically close modal on successful Google Sign-In
     } catch (err: any) {
       setGlobalError(err.message || "Google Sign-In was cancelled.");
     } finally {
@@ -938,7 +933,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </form>
         )}
 
-        {/* 5. COMPLETE GOOGLE PROFILE (With Hybrid Password Setup) */}
+        {/* 5. COMPLETE GOOGLE PROFILE */}
         {mode === "complete_google" && (
           <form onSubmit={handleCompleteGoogleProfile} noValidate className="space-y-3">
             <div>
@@ -984,7 +979,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               )}
             </div>
 
-            {/* Password linking inputs for cross-device support */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-semibold text-[#281E15] mb-1">
