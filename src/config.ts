@@ -7,6 +7,7 @@ export const brand = {
 
 export const social = {
   whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER ?? "919901200520",
+  whatsapp: `https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER ?? "919901200520"}`,
   instagram: import.meta.env.VITE_INSTAGRAM_URL ?? "https://www.instagram.com/kandammakids",
   facebook: import.meta.env.VITE_FACEBOOK_URL ?? "https://www.facebook.com/kandammakids",
 } as const;

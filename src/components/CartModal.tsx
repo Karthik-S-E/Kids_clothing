@@ -1,6 +1,7 @@
-import { X, AlertCircle, MailCheck, ShoppingBag, FileText } from "lucide-react";
+import { X, AlertCircle, MailCheck, ShoppingBag, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import { formatINR } from "../lib/formatINR";
 import { whatsappCartUrl } from "../lib/whatsapp";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -8,6 +9,8 @@ import { sendEmailVerification } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import { useState } from "react";
 import { InvoiceModal } from "./InvoiceModal";
+import { OrderConfirmationModal } from "./OrderConfirmationModal";
+import { updateOrderStatus } from "../lib/orderService";
 
 export function CartModal({
   isOpen,
@@ -19,13 +22,19 @@ export function CartModal({
   onOpenWishlist?: () => void;
 }) {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const addItem = useWishlistStore((s) => s.addItem);
 
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [resentSuccess, setResentSuccess] = useState(false);
   
-  // Invoice Popup State
+  // Invoice & Confirmation Flow States
   const [completedOrder, setCompletedOrder] = useState<any | null>(null);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
 
   const currentUser = auth.currentUser;
 
@@ -38,6 +47,25 @@ export function CartModal({
       setTimeout(() => setResentSuccess(false), 4000);
     } catch {
       setVerificationError("Please wait a moment before requesting another verification email.");
+    }
+  };
+
+  // Move individual item from Cart to Wishlist securely
+ const handleMoveToWishlist = (item: any) => {
+    try {
+      addItem({
+        id: item.product.id || item.product._id,
+        name: item.product.name,
+        price: item.product.price,
+        image: item.product.image || item.image,
+        gender: item.product.gender || "unisex",
+        ageRange: item.product.ageRange || "Kids",
+        description: item.product.description || "",
+        sizes: item.product.sizes || ["Standard"],
+      });
+      removeItem(item.product.id, item.size);
+    } catch (err) {
+      console.error("Failed to move item to wishlist:", err);
     }
   };
 
@@ -76,7 +104,7 @@ export function CartModal({
         image: item.product.image,
       })),
       totalAmount: totalPrice,
-      status: "Confirmed",
+      status: "Pending WhatsApp Confirmation",
       delivery: {
         customerName: user.displayName || "Customer",
         phone: "9999999999",
@@ -93,17 +121,74 @@ export function CartModal({
     } catch (err: any) {
       console.error("FIRESTORE WRITE FAILED:", err);
       alert("Database error: " + (err.message || "Could not save order. Check Firestore rules."));
+      return;
     }
+
+    setCompletedOrder(orderPayload);
+    setPendingOrderId(orderId);
+    setModalMessage(null);
+
+    // Close Cart Modal
+    onClose();
 
     // Open WhatsApp order chat
     const url = whatsappCartUrl(items, orderId);
     window.open(url, "_blank");
 
-    // Save order data for invoice view and trigger invoice modal
-    setCompletedOrder(orderPayload);
-    clearCart();
-    onClose();
-    setIsInvoiceOpen(true);
+    // Trigger confirmation popup
+    setTimeout(() => {
+      setIsConfirmationOpen(true);
+    }, 1500);
+  };
+
+  // Post-WhatsApp actions
+  const handleConfirmOrder = async () => {
+    if (!pendingOrderId) return;
+    setActionLoading(true);
+    setModalMessage(null);
+    try {
+      await updateOrderStatus(pendingOrderId, "Confirmed");
+      setIsConfirmationOpen(false);
+      clearCart();
+      setIsInvoiceOpen(true);
+    } catch {
+      setModalMessage("Could not update status. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSaveForLater = async () => {
+    if (!pendingOrderId) return;
+    setActionLoading(true);
+    setModalMessage(null);
+    try {
+      await updateOrderStatus(pendingOrderId, "Saved for Later");
+      setModalMessage("Order successfully saved to your drafts/wishlist!");
+      setTimeout(() => {
+        setIsConfirmationOpen(false);
+        setModalMessage(null);
+      }, 1500);
+    } catch {
+      setModalMessage("Could not update status.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!pendingOrderId) return;
+    setActionLoading(true);
+    setModalMessage(null);
+    try {
+      await updateOrderStatus(pendingOrderId, "Cancelled");
+      setIsConfirmationOpen(false);
+      setPendingOrderId(null);
+    } catch {
+      setModalMessage("Could not cancel order.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleOpenWishlistFromCart = () => {
@@ -217,10 +302,21 @@ export function CartModal({
                               >
                                 +
                               </button>
+                              
+                              {/* Move to Wishlist Option */}
+                              <button
+                                type="button"
+                                onClick={() => handleMoveToWishlist(item)}
+                                className="ml-auto text-xs text-stone-600 hover:text-[#ff3e6c] font-medium flex items-center gap-1 cursor-pointer transition"
+                                title="Save to Wishlist for later"
+                              >
+                                <Heart className="h-3.5 w-3.5" /> Move to Wishlist
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => removeItem(item.product.id, item.size)}
-                                className="ml-auto text-xs text-red-500 hover:text-red-600 font-semibold cursor-pointer p-1"
+                                className="text-xs text-red-500 hover:text-red-600 font-semibold cursor-pointer p-1"
                               >
                                 Remove
                               </button>
@@ -299,7 +395,16 @@ export function CartModal({
         )}
       </AnimatePresence>
 
-      {/* Invoice Popup Modal after successful checkout */}
+      <OrderConfirmationModal
+        isOpen={isConfirmationOpen}
+        orderId={pendingOrderId}
+        onConfirm={handleConfirmOrder}
+        onCancel={handleCancelOrder}
+        onSaveForLater={handleSaveForLater}
+        loading={actionLoading}
+        feedbackMessage={modalMessage}
+      />
+
       <InvoiceModal
         isOpen={isInvoiceOpen}
         onClose={() => setIsInvoiceOpen(false)}
