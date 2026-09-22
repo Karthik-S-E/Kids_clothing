@@ -78,13 +78,17 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
   }, [location.pathname]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: Event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
@@ -118,6 +122,8 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Wishlist clicked');
     if (onOpenWishlist) {
       onOpenWishlist();
     } else {
@@ -127,41 +133,41 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
   return (
     <>
-      <header 
-        className={`fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E2D9] transition-all duration-300 shadow-xs ${
-          isScrolled ? 'h-[58px]' : 'h-[72px]'
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E2D9] transition-all duration-300 shadow-xs pointer-events-auto ${
+          isScrolled ? 'h-[56px]' : 'h-[64px]'
         }`}
       >
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-full">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-3 sm:px-4 md:px-6 h-full overflow-hidden pointer-events-auto">
           
           {/* Left Side: Mobile Menu + Brand Logo */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-[#281E15] hover:opacity-70 transition cursor-pointer"
+              className="md:hidden p-2 text-[#281E15] hover:opacity-70 transition cursor-pointer shrink-0"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
 
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
               {settings.logoUrl ? (
                 <img
                   src={settings.logoUrl}
                   alt={settings.name}
-                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover ring-2 ring-[#D9B382]/50 shadow-sm flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+                  className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 rounded-full object-cover ring-2 ring-[#D9B382]/50 shadow-sm flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-xs flex-shrink-0 shadow-sm">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#281E15] font-bold text-white text-[10px] sm:text-xs flex-shrink-0 shadow-sm">
                   KK
                 </div>
               )}
-              <div className="hidden sm:flex flex-col text-left justify-center">
-                <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#281E15] leading-none">
+              <div className="flex flex-col text-left justify-center min-w-0">
+                <span className="font-serif text-xs sm:text-sm md:text-base lg:text-xl font-bold tracking-tight text-[#281E15] leading-none truncate">
                   {settings.name || "Kandamma Kids"}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-semibold text-[#C27A6A] tracking-wider mt-1 leading-none">
+                <span className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] font-semibold text-[#C27A6A] tracking-wider mt-0.5 leading-none truncate">
                   ನಿಮ್ಮ ಮುದ್ದು ಕಂದಮ್ಮಗಳಿಗಾಗಿ
                 </span>
               </div>
@@ -169,10 +175,10 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
           </div>
 
           {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link
               to="/shop"
-              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+              className={`text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] whitespace-nowrap ${
                 isActive("/shop") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
@@ -180,7 +186,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             </Link>
             <Link
               to="/about"
-              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+              className={`text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] whitespace-nowrap ${
                 isActive("/about") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
@@ -188,7 +194,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             </Link>
             <Link
               to="/contact"
-              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+              className={`text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] whitespace-nowrap ${
                 isActive("/contact") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
@@ -196,7 +202,7 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             </Link>
             <Link
               to="/track"
-              className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] ${
+              className={`text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase transition-colors hover:text-[#C27A6A] whitespace-nowrap ${
                 isActive("/track") ? "text-[#C27A6A] border-b-2 border-[#C27A6A] pb-0.5" : "text-[#281E15]/80"
               }`}
             >
@@ -205,14 +211,14 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
           </nav>
 
           {/* Right Actions: Search -> Instagram -> Wishlist -> Bag -> Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 text-[#281E15]">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3 text-[#281E15] shrink-0">
             <NavbarSearch />
 
             <a
               href={social.instagram}
               target="_blank"
               rel="noreferrer"
-              className="hover:text-[#C27A6A] transition-colors p-1.5 hidden lg:block"
+              className="hover:text-[#C27A6A] transition-colors p-1.5 hidden lg:block shrink-0"
               aria-label="Instagram"
             >
               <InstagramIcon className="h-4 w-4" />
@@ -221,13 +227,13 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             <button
               type="button"
               onClick={handleWishlistClick}
-              className="relative hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5"
+              className="relative hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5 shrink-0"
               aria-label="Wishlist"
               title="Wishlist"
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3e6c] text-[9px] font-bold text-white shadow-xs">
+                <span className="absolute -top-1 -right-1.5 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-[#ff3e6c] text-[8px] sm:text-[9px] font-bold text-white shadow-xs">
                   {wishlistCount}
                 </span>
               )}
@@ -236,13 +242,13 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             <button
               type="button"
               onClick={onOpenCart}
-              className="relative cursor-pointer hover:text-[#C27A6A] transition-colors p-1.5"
+              className="relative cursor-pointer hover:text-[#C27A6A] transition-colors p-1.5 shrink-0"
               aria-label="Open cart"
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
               {totalCount > 0 && (
                 <motion.span 
-                  className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#281E15] text-[9px] font-bold text-white shadow-xs"
+                  className="absolute -top-1 -right-1.5 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-[#281E15] text-[8px] sm:text-[9px] font-bold text-white shadow-xs"
                   animate={badgeAnimate ? { scale: [1, 1.3, 1] } : { scale: 1 }}
                   transition={{ duration: 0.2 }}
                 >
@@ -252,30 +258,42 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
             </button>
 
             {/* User Profile / Account Dropdown */}
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative shrink-0 z-10" ref={dropdownRef}>
               {user ? (
                 <button
                   type="button"
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C27A6A] text-xs font-bold text-white hover:bg-[#b0695a] transition cursor-pointer uppercase tracking-tight shadow-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Profile button clicked, current state:', userDropdownOpen);
+                    setUserDropdownOpen(!userDropdownOpen);
+                  }}
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#C27A6A] text-[10px] sm:text-xs font-bold text-white hover:bg-[#b0695a] transition cursor-pointer uppercase tracking-tight shadow-xs"
                   title="My Account"
+                  aria-label="My Account"
+                  aria-expanded={userDropdownOpen}
                 >
                   {getUserInitials(displayName)}
                 </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() => setAuthModalOpen(true)}
-                  className="hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Sign in button clicked');
+                    setAuthModalOpen(true);
+                  }}
+                  className="hover:text-[#C27A6A] transition-colors cursor-pointer p-1.5 shrink-0"
                   aria-label="Sign In or Register"
                   title="Sign In"
                 >
-                  <User className="h-5 w-5" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               )}
 
               {userDropdownOpen && user && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#E8E2D9] bg-white p-2 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="absolute right-0 mt-2 w-52 sm:w-56 rounded-2xl border border-[#E8E2D9] bg-white p-2 shadow-2xl z-[9999] animate-in fade-in slide-in-from-top-1 duration-150 pointer-events-auto profile-dropdown">
                   <div className="border-b border-stone-100 px-3 py-2.5">
                     <p className="text-xs font-bold text-stone-900 truncate capitalize">
                       {displayName}
@@ -288,7 +306,8 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                   <div className="py-1 space-y-0.5">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setUserDropdownOpen(false);
                         setProfileModalOpen(true);
                       }}
@@ -300,7 +319,10 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
                     <Link
                       to="/orders"
-                      onClick={() => setUserDropdownOpen(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserDropdownOpen(false);
+                      }}
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-stone-700 hover:bg-[#FAF7F2] transition"
                     >
                       <Package className="h-4 w-4 text-[#C27A6A]" />
@@ -309,7 +331,10 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
                     <Link
                       to="/track"
-                      onClick={() => setUserDropdownOpen(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserDropdownOpen(false);
+                      }}
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-stone-700 hover:bg-[#FAF7F2] transition"
                     >
                       <Truck className="h-4 w-4 text-[#C27A6A]" />
@@ -319,7 +344,10 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                     {isAdmin && (
                       <Link
                         to="/admin"
-                        onClick={() => setUserDropdownOpen(false)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserDropdownOpen(false);
+                        }}
                         className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 transition"
                       >
                         <ShieldCheck className="h-4 w-4 text-amber-700" />
@@ -331,7 +359,8 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
                   <div className="border-t border-stone-100 pt-1 mt-1">
                     <button
                       type="button"
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         setUserDropdownOpen(false);
                         await logout();
                       }}
@@ -349,40 +378,46 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
 
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-6 py-6 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col space-y-4 text-xs font-bold tracking-[0.15em] uppercase text-[#281E15]">
-              <Link to="/shop" className="py-2 border-b border-[#E8E2D9]/60">Shop Collection</Link>
-              <Link to="/about" className="py-2 border-b border-[#E8E2D9]/60">Our Heritage & Story</Link>
-              <Link to="/contact" className="py-2 border-b border-[#E8E2D9]/60">Customer Care</Link>
-              <Link to="/track" className="py-2 border-b border-[#E8E2D9]/60">Track Parcel</Link>
+          <div className="md:hidden border-t border-[#E8E2D9] bg-[#FAF7F2] px-4 sm:px-6 py-4 sm:py-6 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 overflow-x-hidden">
+            <nav className="flex flex-col space-y-3 sm:space-y-4 text-[11px] sm:text-xs font-bold tracking-[0.15em] uppercase text-[#281E15]">
+              <Link to="/shop" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60">Shop Collection</Link>
+              <Link to="/about" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60">Our Heritage & Story</Link>
+              <Link to="/contact" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60">Customer Care</Link>
+              <Link to="/track" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60">Track Parcel</Link>
               
               {user ? (
                 <>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Mobile profile clicked');
                       setMobileMenuOpen(false);
                       setProfileModalOpen(true);
                     }}
-                    className="py-2 border-b border-[#E8E2D9]/60 text-left flex items-center gap-2"
+                    className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60 text-left flex items-center gap-2 cursor-pointer"
                   >
                     <UserCheck className="h-4 w-4 text-[#C27A6A]" /> My Profile & Address
                   </button>
-                  <Link to="/orders" className="py-2 border-b border-[#E8E2D9]/60 flex items-center gap-2">
+                  <Link to="/orders" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60 flex items-center gap-2">
                     <Package className="h-4 w-4 text-[#C27A6A]" /> My Orders
                   </Link>
                   {isAdmin && (
-                    <Link to="/admin" className="py-2 border-b border-[#E8E2D9]/60 flex items-center gap-2 text-amber-800">
+                    <Link to="/admin" className="py-2 sm:py-2.5 border-b border-[#E8E2D9]/60 flex items-center gap-2 text-amber-800">
                       <ShieldCheck className="h-4 w-4 text-amber-700" /> Store Admin Hub
                     </Link>
                   )}
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Mobile logout clicked');
                       setMobileMenuOpen(false);
                       await logout();
                     }}
-                    className="py-2 text-left text-red-600 flex items-center gap-2"
+                    className="py-2 sm:py-2.5 text-left text-red-600 flex items-center gap-2 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" /> Sign Out
                   </button>
@@ -390,11 +425,14 @@ export function Header({ onOpenCart, onOpenWishlist }: HeaderProps) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Mobile sign in clicked');
                     setMobileMenuOpen(false);
                     setAuthModalOpen(true);
                   }}
-                  className="py-2 text-left text-[#C27A6A] flex items-center gap-2 font-bold"
+                  className="py-2 sm:py-2.5 text-left text-[#C27A6A] flex items-center gap-2 font-bold cursor-pointer"
                 >
                   <User className="h-4 w-4" /> Sign In / Register
                 </button>

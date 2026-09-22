@@ -6,7 +6,6 @@ import { CartModal } from "./CartModal";
 import { WishlistDrawer } from "./WishlistDrawer";
 import { AiStylistModal } from "./AiStylistModal";
 import { FloatingActionDock } from "./FloatingActionDock";
-import { Marquee } from "./Marquee";
 
 // 1. Explicitly define the interface here
 interface LayoutProps {
@@ -26,22 +25,11 @@ export function Layout({ onOpenWishlist }: LayoutProps) {
         <span>Free Express Delivery Across India on Orders Over ₹999</span>
       </div>
       
-      <Header 
-        onOpenCart={() => setCartOpen(true)} 
-        onOpenWishlist={onOpenWishlist || (() => setWishlistOpen(true))} 
+      <Header
+        onOpenCart={() => setCartOpen(true)}
+        onOpenWishlist={onOpenWishlist || (() => setWishlistOpen(true))}
       />
-      
-      {/* Promotional Marquee */}
-      <div className="bg-[#F8BBD0] py-1.5 overflow-hidden border-b border-[#E8E2D9]">
-        <Marquee speed={25} direction="left">
-          <span className="mx-6 text-[11px] font-semibold text-[#1D1B19] tracking-wide">✨ NEW ARRIVALS: FESTIVE COLLECTION</span>
-          <span className="mx-6 text-[11px] font-semibold text-[#1D1B19] tracking-wide">🎉 FREE SHIPPING ON ORDERS OVER ₹999</span>
-          <span className="mx-6 text-[11px] font-semibold text-[#1D1B19] tracking-wide">💎 PREMIUM QUALITY ETHNIC WEAR</span>
-          <span className="mx-6 text-[11px] font-semibold text-[#1D1B19] tracking-wide">🌸 HANDCRAFTED WITH LOVE & CARE</span>
-          <span className="mx-6 text-[11px] font-semibold text-[#1D1B19] tracking-wide">🎀 SHOP NOW FOR BEST DEALS</span>
-        </Marquee>
-      </div>
-      
+
       <main className="flex-1 pt-28">
         <Outlet />
       </main>

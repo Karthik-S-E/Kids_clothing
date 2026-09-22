@@ -138,6 +138,7 @@ html,
 body,
 #root {
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -146,8 +147,79 @@ body {
   background: var(--background);
   color: var(--text-primary);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--duration-medium) var(--ease-editorial),
               color var(--duration-medium) var(--ease-editorial);
+}
+
+/* Safe mobile padding utilities */
+.safe-mobile-padding {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .safe-mobile-padding {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .safe-mobile-padding {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Mobile-safe container */
+.mobile-safe-container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (min-width: 640px) {
+  .mobile-safe-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-safe-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 1280px;
+  }
+}
+
+/* Fix dropdown z-index and pointer events */
+.dropdown-fix {
+  pointer-events: auto !important;
+  z-index: 100 !important;
+}
+
+/* Ensure header buttons are always clickable */
+header button {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 51 !important;
+}
+
+/* Fix dropdown z-index to be above everything */
+.profile-dropdown {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+/* Fix any overlay issues */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body::before {
